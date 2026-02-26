@@ -1,0 +1,50 @@
+---
+title: "Build Your First Mule App"
+description: "Step-by-step guide to building your first Mule application"
+---
+
+## Overview
+
+Build a simple HTTP-based Mule application that accepts requests and returns a response.
+
+## Prerequisites
+
+- Anypoint Studio installed
+- Java JDK 8 or 11
+
+## Steps
+
+<Steps>
+  <Step title="Create a New Project">
+    Open Anypoint Studio and go to **File > New > Mule Project**. Name your project `hello-mule` and click **Finish**.
+  </Step>
+  <Step title="Add an HTTP Listener">
+    From the Mule Palette, drag an **HTTP Listener** onto the canvas. Configure it:
+    - **Host**: `0.0.0.0`
+    - **Port**: `8081`
+    - **Path**: `/hello`
+  </Step>
+  <Step title="Add a Set Payload Transformer">
+    Drag a **Set Payload** component after the HTTP Listener. Set the value to:
+    ```
+    Hello from MuleSoft!
+    ```
+  </Step>
+  <Step title="Run the Application">
+    Right-click the project and select **Run As > Mule Application**. Wait for the console to show `DEPLOYED`.
+  </Step>
+  <Step title="Test the Application">
+    Open your browser and navigate to `http://localhost:8081/hello`. You should see the response "Hello from MuleSoft!".
+  </Step>
+</Steps>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Connectors" icon="plug" href="/guides/connectors">
+    Connect to external systems and APIs.
+  </Card>
+  <Card title="DataWeave" icon="code" href="/guides/dataweave">
+    Transform data between formats.
+  </Card>
+</CardGroup>

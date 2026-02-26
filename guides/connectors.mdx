@@ -1,0 +1,42 @@
+---
+title: "Connectors"
+description: "Connect to databases, APIs, SaaS applications, and more"
+---
+
+## Overview
+
+MuleSoft connectors provide pre-built connectivity to hundreds of systems, protocols, and SaaS applications. They handle authentication, data serialization, and error management so you can focus on integration logic.
+
+## Popular Connectors
+
+| Connector | Use Case |
+|-----------|----------|
+| **HTTP/HTTPS** | REST API calls and webhooks |
+| **Database** | MySQL, PostgreSQL, Oracle, SQL Server |
+| **Salesforce** | CRM data synchronization |
+| **SAP** | ERP integration |
+| **File/SFTP** | File-based integrations |
+| **JMS / Anypoint MQ** | Asynchronous messaging |
+| **Email** | SMTP, IMAP, POP3 |
+| **Amazon S3** | Cloud storage |
+
+## Finding Connectors
+
+Connectors are available through:
+
+- **Anypoint Exchange** - Browse and install connectors from the marketplace
+- **Mule Palette** - Search and add connectors directly in Anypoint Studio
+- **Maven** - Add connector dependencies to your `pom.xml`
+
+## Connector Configuration
+
+Each connector requires a **connection configuration** that defines how to connect to the target system. Configurations typically include:
+
+- **Connection URL or host**
+- **Authentication credentials**
+- **Connection pooling settings**
+- **Timeout values**
+
+<Tip>
+  Create global connector configurations that can be reused across multiple flows in your application.
+</Tip>

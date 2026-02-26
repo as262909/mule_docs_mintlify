@@ -1,0 +1,202 @@
+---
+title: "Message Routing Rules"
+description: "Route messages to specific queues based on matching properties or headers"
+---
+
+## Overview
+
+**Message-routing rules** provide intelligent, content-based routing on message exchange bindings. Instead of delivering every message to every bound queue, routing rules evaluate message properties and headers to selectively forward messages to specific queues. This enables fine-grained control over message distribution without requiring additional application logic in the producer.
+
+When a message is published to an exchange:
+
+- Bindings **with** routing rules receive the message only if the message properties match the configured rule criteria.
+- Bindings **without** routing rules continue to receive **all** messages published to the exchange.
+
+<Tip>
+  Routing rules are evaluated at the binding level. A single exchange can have a mix of bindings with and without rules, giving you flexible control over message distribution.
+</Tip>
+
+## Use Case Example
+
+Consider an e-commerce platform that processes order events through a single exchange. Different downstream services need different subsets of these events:
+
+<AccordionGroup>
+  <Accordion title="Example: Routing Orders by Size and Category">
+    An exchange named `order-events` has three bound queues:
+
+    | Queue | Routing Rule | Purpose |
+    |---|---|---|
+    | `medium-orders` | Property `orderSize` equals `medium` | Processes medium-sized shipments with standard handling |
+    | `premium-items` | Property `category` equals `premium` | Routes premium items for priority fulfillment |
+    | `all-orders` | No rule (receives all messages) | Archives every order for analytics and auditing |
+
+    When a message with properties `{"orderSize": "medium", "category": "standard"}` is published:
+
+    - `medium-orders` receives the message (matches the `orderSize` rule).
+    - `premium-items` does **not** receive the message (does not match the `category` rule).
+    - `all-orders` receives the message (no rule configured, receives everything).
+  </Accordion>
+</AccordionGroup>
+
+## Creating a Routing Rule
+
+<Steps>
+  <Step title="Sign In to Anypoint Platform">
+    Navigate to [Anypoint Platform](https://anypoint.mulesoft.com) and sign in with your credentials.
+  </Step>
+
+  <Step title="Open the MQ Console">
+    From the main navigation menu, select **MQ**. Choose the appropriate **environment** and **region**.
+  </Step>
+
+  <Step title="Select the Exchange">
+    In the destinations list, click the name of the exchange where you want to configure routing rules.
+  </Step>
+
+  <Step title="Add a Routing Rule">
+    Locate the binding for the target queue and click **Add Rule**. The rule configuration form opens.
+  </Step>
+
+  <Step title="Configure the Rule">
+    Specify the following:
+
+    | Field | Description |
+    |---|---|
+    | **Property Name** | The name of the message property or header to evaluate. |
+    | **Matcher Type** | The comparison operation to apply (see [Matcher Types](#matcher-types) below). |
+    | **Value** | The value or values to match against. |
+
+    <Note>
+      Each routing rule evaluates a **single property**. To match on multiple properties, configure multiple rules on the same binding. All rules on a binding must match for the message to be delivered (AND logic).
+    </Note>
+  </Step>
+
+  <Step title="Confirm the Rule">
+    Click **Save** to apply the routing rule. The rule takes effect immediately for new messages published to the exchange.
+  </Step>
+</Steps>
+
+## Editing and Deleting Rules
+
+### Editing a Rule
+
+To modify an existing routing rule, navigate to the exchange, locate the binding with the rule, and click the **Edit** icon next to the rule. Update the property name, matcher type, or value, then save your changes. The updated rule takes effect immediately.
+
+### Deleting a Rule
+
+To remove a routing rule from a binding, click the **Delete** icon next to the rule and confirm the action. Once deleted, the binding reverts to receiving all messages published to the exchange (unless other rules remain on the binding).
+
+## Message Property Configuration
+
+Routing rules evaluate **message properties and headers** attached to each message. Properties are key-value pairs that you set when publishing a message.
+
+### JSON Structure
+
+When publishing messages via the Anypoint MQ Broker API, include properties in the message payload structure:
+
+```json
+{
+  "headers": {
+    "itemSize": "large",
+    "category": "premium",
+    "orderTotal": 250
+  },
+  "body": "User added item to cart"
+}
+```
+
+### Setting Properties in the MQ Console
+
+<Steps>
+  <Step title="Open the Message Sender">
+    Navigate to the exchange and click the **Message Sender** tab.
+  </Step>
+
+  <Step title="Enable User Properties">
+    Toggle the **Add User Properties** option to expand the properties section.
+  </Step>
+
+  <Step title="Add Properties">
+    Enter one or more key-value pairs. These properties are available for routing rule evaluation when the message is published.
+  </Step>
+
+  <Step title="Send the Message">
+    Enter the message body and click **Send**. Anypoint MQ evaluates the properties against all routing rules on the exchange bindings.
+  </Step>
+</Steps>
+
+### Setting Properties via the Broker API
+
+Use the Anypoint MQ Broker API to publish messages with properties programmatically. Include properties in the `headers` field of the request payload. This approach is ideal for production workloads where messages originate from Mule applications or external systems.
+
+## Matcher Types
+
+Routing rules support different matcher types depending on whether the property value is a **string** or a **number**.
+
+### String Matchers
+
+| Matcher | Description | Example |
+|---|---|---|
+| **Equals** | The property value must exactly match the specified string. | Property `region` equals `us-east` |
+| **Prefix** | The property value must start with the specified string. | Property `sku` starts with `PREM-` |
+| **Any of** | The property value must match one of the specified strings. | Property `status` is one of `active`, `pending`, `review` |
+| **None of** | The property value must not match any of the specified strings. | Property `status` is not `cancelled` or `expired` |
+| **Exists** | The property must be present in the message, regardless of its value. | Property `priority` exists |
+
+### Number Matchers
+
+| Matcher | Description | Example |
+|---|---|---|
+| **Equals** | The property value must exactly equal the specified number. | Property `quantity` equals `100` |
+| **Less than** | The property value must be strictly less than the specified number. | Property `total` is less than `1000` |
+| **Less than or equal** | The property value must be less than or equal to the specified number. | Property `total` is at most `999.99` |
+| **Greater than** | The property value must be strictly greater than the specified number. | Property `total` is greater than `500` |
+| **Greater than or equal** | The property value must be greater than or equal to the specified number. | Property `total` is at least `100` |
+| **Range** | The property value must fall within the specified numeric range (inclusive). | Property `total` is between `100` and `500` |
+| **None of** | The property value must not equal any of the specified numbers. | Property `priority` is not `0` or `-1` |
+| **Exists** | The property must be present in the message, regardless of its value. | Property `score` exists |
+
+<Note>
+  Numeric routing rules require **Anypoint MQ Connector version 3.2.0 or later**. If you are using an earlier version of the connector, only string matchers are available. Upgrade the connector to use numeric matchers.
+</Note>
+
+## Restrictions and Limits
+
+<AccordionGroup>
+  <Accordion title="Binding Limits">
+    | Limit | Value |
+    |---|---|
+    | Maximum queue bindings with routing rules per exchange | **10** |
+    | Maximum queue bindings without routing rules per exchange | **450** |
+
+    <Warning>
+      When routing rules are configured on any binding within an exchange, the maximum number of queue bindings for that exchange is reduced to **10**. Plan your exchange architecture accordingly.
+    </Warning>
+  </Accordion>
+
+  <Accordion title="Property and Header Limits">
+    | Limit | Value |
+    |---|---|
+    | Maximum property name size | **180 bytes** |
+    | Maximum property value size | **45 KB** |
+    | Maximum number of headers/properties per message | **500** |
+    | Maximum total header/property size per message | **215 KB** |
+  </Accordion>
+
+  <Accordion title="Rule Constraints">
+    - Each routing rule evaluates a **single property**. You cannot create a single rule that evaluates multiple properties simultaneously.
+    - Multiple rules on the same binding use **AND logic** -- all rules must match for the message to be delivered to the bound queue.
+    - Routing rules are evaluated against message **properties and headers** only, not against the message body.
+  </Accordion>
+</AccordionGroup>
+
+## Related Topics
+
+<CardGroup cols={2}>
+  <Card title="Message Exchanges" icon="arrows-split-up-and-left" href="/mq/exchanges">
+    Learn how to create exchanges and bind queues for publish/subscribe messaging.
+  </Card>
+  <Card title="Connectors" icon="plug" href="/mq/connectors">
+    Configure the Anypoint MQ Connector to publish messages with properties for routing.
+  </Card>
+</CardGroup>

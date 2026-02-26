@@ -1,0 +1,81 @@
+---
+title: "Connected Apps"
+description: "Configure connected apps for Anypoint MQ API access without sharing credentials"
+---
+
+## Overview
+
+Connected apps allow you to access the Anypoint MQ APIs using OAuth 2.0 client credentials without sharing user credentials. This approach is more secure than traditional client apps and supports fine-grained scope control.
+
+<Warning>
+Connected apps require **MQ Connector 4.x for Mule 4**. If you are using Connector 3.x or earlier, use [client apps](/mq/client-apps) instead.
+</Warning>
+
+## Creating a Connected App
+
+<Steps>
+  <Step title="Navigate to Connected Apps">
+    Go to **Access Management** > **Connected Apps** in Anypoint Platform.
+  </Step>
+  <Step title="Create a New App">
+    Click **Create app** and provide a descriptive name for the connected app.
+  </Step>
+  <Step title="Select Grant Type">
+    Choose **App acts on its own behalf (client credentials)** as the grant type. This enables machine-to-machine authentication without user interaction.
+  </Step>
+  <Step title="Add MQ Scopes">
+    Under the scopes section, add the Anypoint MQ scopes that the connected app requires. See the [MQ Scopes](#mq-scopes) table below for available options.
+  </Step>
+  <Step title="Choose Business Groups and Environments">
+    Select the specific business groups and environments that the connected app should have access to. This restricts the app's access to only the resources it needs.
+  </Step>
+  <Step title="Save and Copy Credentials">
+    Click **Save**. Immediately copy the **Client ID** and **Client Secret** displayed on the confirmation screen.
+  </Step>
+</Steps>
+
+<Warning>
+The Client Secret is displayed only once upon creation. Store it securely. Never share a Client ID and Secret across multiple applications, as this prevents proper auditing and access control.
+</Warning>
+
+## MQ Scopes
+
+The following scopes are available for Anypoint MQ connected apps:
+
+| Scope | Description |
+|---|---|
+| **Administer destinations** | Create, edit, and delete queues, exchanges, and routing rules. |
+| **Clear destinations** | Purge all messages from queues. |
+| **Subscribe** | Consume and acknowledge messages from queues. |
+| **Publish** | Send messages to queues and exchanges. |
+| **Manage clients** | Create, edit, and delete client apps within the environment. |
+| **Read stats** | View queue and exchange statistics and usage data. |
+| **View destinations** | View queue and exchange configuration details. |
+| **View clients** | View client app details within the environment. |
+
+<Tip>
+Assign only the scopes that your application needs. For example, a consumer service typically requires only **Subscribe** and **View destinations**, while an admin tool may need **Administer destinations** and **Manage clients**.
+</Tip>
+
+## Configuring in Anypoint Studio
+
+Once you have your connected app credentials, configure them in your Mule application:
+
+<Steps>
+  <Step title="Open the MQ Connector Configuration">
+    In Anypoint Studio, open the Anypoint MQ Connector configuration for your project.
+  </Step>
+  <Step title="Select Connected App Authentication">
+    In the connection settings, select the **Connected App** authentication type.
+  </Step>
+  <Step title="Enter Credentials">
+    Paste the **Client ID** and **Client Secret** from the connected app into the corresponding fields.
+  </Step>
+  <Step title="Configure the URL">
+    Set the Anypoint Platform URL (default: `https://anypoint.mulesoft.com/`) and select the appropriate environment.
+  </Step>
+</Steps>
+
+<Note>
+Connected apps authenticate via OAuth 2.0, which supports multi-factor authentication (MFA) enforcement at the organization level. This makes connected apps the recommended approach for production deployments.
+</Note>

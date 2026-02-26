@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 40" fill="none">
+  <rect x="0" y="4" width="32" height="32" rx="6" fill="#00C7FF"/>
+  <text x="16" y="26" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="white" text-anchor="middle">MQ</text>
+  <text x="42" y="27" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#FFFFFF">MuleSoft Docs</text>
+</svg>

@@ -1,0 +1,86 @@
+---
+title: "Cross-Region Failover"
+description: "Configure automatic failover to a backup region for standard queues"
+---
+
+## Overview
+
+Cross-region failover provides automatic switching to a backup region when the primary region becomes unreachable. When enabled, Anypoint MQ creates a **fallback queue** (with a `_fb` suffix) in a designated backup region to ensure message continuity.
+
+<Note>
+Cross-region failover provides **resiliency**, not **redundancy**. Messages are not replicated between regions. Failover ensures your applications can continue sending and receiving messages during a regional outage, but messages already in the primary queue remain there until the region recovers.
+</Note>
+
+## How Failover Works
+
+<Steps>
+  <Step title="Health Monitoring">
+    The Anypoint MQ connector continuously monitors the health of the primary region by sending periodic health-check requests.
+  </Step>
+  <Step title="Automatic Switchover">
+    When the primary region becomes unreachable, the connector automatically redirects message operations to the fallback queue in the backup region.
+  </Step>
+  <Step title="Primary Restoration">
+    The connector continues to monitor the primary region. When it becomes available again, the connector switches back automatically.
+  </Step>
+  <Step title="Fallback Message Processing">
+    After switching back to the primary region, the connector **processes remaining messages in the fallback queue first** before resuming consumption from the primary queue.
+  </Step>
+</Steps>
+
+## Limitations
+
+<Warning>
+Review these limitations carefully before enabling cross-region failover.
+</Warning>
+
+| Limitation | Details |
+|---|---|
+| Not enabled by default | Failover must be explicitly enabled per queue. |
+| Connector version | Requires **Anypoint MQ Connector 4.0.7** or later. |
+| Standard queues only | FIFO queues and message exchanges are **not supported**. |
+| No data replication | Messages are not replicated between primary and fallback regions. |
+| Gov Cloud | Cross-region failover is **not supported** in Gov Cloud. |
+| UI limitations | The **Message Sender** and **Message Browser** in the MQ console do not support failover operations. |
+| API request consumption | Periodic health-check calls to primary and fallback regions consume additional API requests. |
+
+## Configuring Failover
+
+<Steps>
+  <Step title="Navigate to Queue Settings">
+    Open the Anypoint MQ console, select the target queue, and click **Edit** (or create a new queue).
+  </Step>
+  <Step title="Enable Cross-Region Failover">
+    Toggle **Enable Cross-Region Failover** to on. The system automatically assigns a fallback region and creates the fallback queue with the `_fb` suffix.
+  </Step>
+  <Step title="Save the Configuration">
+    Save the queue configuration. The fallback queue appears in your destinations list.
+  </Step>
+  <Step title="Restart Applications">
+    Restart all Mule applications that consume from or publish to this queue. The connector must reinitialize to detect the failover configuration.
+  </Step>
+</Steps>
+
+<Tip>
+After enabling failover, verify the fallback queue was created by checking the destinations list for a queue named `<your-queue>_fb`.
+</Tip>
+
+## Regional Mapping
+
+When failover is enabled, MQ maps the primary region to a designated fallback region. The following table shows the mapping across supported regions.
+
+| Primary Region | Fallback Region |
+|---|---|
+| US East (N. Virginia) | US East (Ohio) |
+| US East (Ohio) | US East (N. Virginia) |
+| US West (Oregon) | US East (N. Virginia) |
+| Canada (Central) | US East (N. Virginia) |
+| EU (Frankfurt) | EU (Ireland) |
+| EU (Ireland) | EU (Frankfurt) |
+| Asia Pacific (Singapore) | Asia Pacific (Sydney) |
+| Asia Pacific (Sydney) | Asia Pacific (Singapore) |
+| Asia Pacific (Tokyo) | Asia Pacific (Singapore) |
+
+<Info>
+Fallback region assignments are fixed and cannot be customized. The mapping is designed to minimize latency while providing geographic separation.
+</Info>

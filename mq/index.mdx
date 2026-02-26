@@ -1,0 +1,159 @@
+---
+title: "Anypoint MQ"
+description: "Cloud-based asynchronous messaging service for application integration"
+---
+
+## Overview
+
+Anypoint MQ is MuleSoft's cloud-native, enterprise-grade messaging service built for seamless application integration. It enables asynchronous communication between applications, microservices, and systems by providing fully hosted message queues and message exchanges directly within the Anypoint Platform.
+
+Unlike traditional on-premise message brokers that require dedicated infrastructure and ongoing maintenance, Anypoint MQ is a fully managed service. MuleSoft handles provisioning, scaling, and high availability so that teams can focus on building integrations rather than managing middleware.
+
+<Tip>
+  Anypoint MQ is designed to work natively with Mule applications via the **Anypoint MQ Connector** in Anypoint Studio and Design Center, but it also exposes a full **REST API** for use with any language or platform.
+</Tip>
+
+## Key Features
+
+<CardGroup cols={2}>
+  <Card title="Hosted Queues and Exchanges" icon="server">
+    Fully managed message queues and publish/subscribe exchanges hosted in the cloud. No infrastructure to provision or maintain.
+  </Card>
+  <Card title="Large Payload Support" icon="weight-hanging">
+    Send messages up to **10 MB** in size, supporting text, CSV, JSON, and other content types.
+  </Card>
+  <Card title="Encryption at Rest" icon="lock">
+    Optionally encrypt message payloads at rest using server-side encryption to meet security and compliance requirements.
+  </Card>
+  <Card title="Publish/Subscribe Messaging" icon="arrows-split-up-and-left">
+    Use message exchanges to broadcast messages to multiple queues simultaneously, enabling fan-out and event-driven architectures.
+  </Card>
+  <Card title="REST API Access" icon="code">
+    Programmatically manage queues, exchanges, and messages through the Anypoint MQ REST APIs, including admin, broker, and stats endpoints.
+  </Card>
+  <Card title="Studio and Connector Integration" icon="plug">
+    Build Mule applications that produce and consume messages using the Anypoint MQ Connector directly in Anypoint Studio or Design Center.
+  </Card>
+</CardGroup>
+
+## Core Concepts
+
+Understanding the building blocks of Anypoint MQ is essential for designing effective messaging architectures.
+
+<AccordionGroup>
+  <Accordion title="Queues">
+    A **queue** is a temporary storage mechanism for messages. Producers send messages to a queue, and consumers retrieve them asynchronously. Anypoint MQ supports two types:
+
+    - **Standard Queues** -- High throughput with best-effort ordering and at-least-once delivery.
+    - **FIFO Queues** -- Strict first-in-first-out ordering with exactly-once delivery.
+
+    Queues also support **dead-letter queues (DLQ)** for capturing messages that fail processing after a configurable number of delivery attempts.
+  </Accordion>
+
+  <Accordion title="Message Exchanges">
+    A **message exchange** enables publish/subscribe (pub/sub) messaging. When a message is published to an exchange, Anypoint MQ routes copies of that message to every queue bound to the exchange.
+
+    Exchanges are ideal for broadcasting events to multiple consumers without the producer needing to know about each subscriber.
+  </Accordion>
+
+  <Accordion title="Bindings">
+    A **binding** is the link between a message exchange and a queue. When you bind a queue to an exchange, that queue receives a copy of every message published to the exchange. A single exchange can have multiple bindings, and a single queue can be bound to multiple exchanges.
+  </Accordion>
+
+  <Accordion title="Message-Routing Rules">
+    **Message-routing rules** allow fine-grained control over which messages from an exchange reach which queues. Rather than delivering every message to every bound queue, routing rules evaluate message properties and selectively forward messages based on criteria you define. This enables content-based routing without additional application logic.
+  </Accordion>
+</AccordionGroup>
+
+## Why Use Queues?
+
+Message queues are a foundational pattern in distributed systems. Anypoint MQ queues provide the following benefits:
+
+| Benefit | Description |
+|---|---|
+| **Horizontal Scalability** | Add consumers dynamically to handle increased message volume without redesigning the architecture. |
+| **Reliability** | The lock-and-acknowledge mechanism ensures messages are not lost. A message remains in the queue until a consumer explicitly acknowledges successful processing. If the consumer fails, the message returns to the queue for redelivery. |
+| **Application Decoupling** | Producers and consumers operate independently. Producers do not need to know whether consumers are available or how many consumers exist. |
+| **Unlimited Messages** | There is no hard limit on the number of messages a queue can hold, allowing the system to absorb traffic spikes gracefully. |
+| **Long Polling** | Consumers can use long polling (up to 3,600 seconds) to reduce empty responses and minimize unnecessary API calls. |
+| **Usage-Based Billing** | Pay only for the API requests you make. There are no charges for idle queues or pre-provisioned capacity. |
+
+## Platform Capabilities
+
+<AccordionGroup>
+  <Accordion title="Management Console">
+    The Anypoint MQ management console, accessible from the Anypoint Platform navigation menu, provides a graphical interface for creating and managing queues, exchanges, bindings, and routing rules. You can also send test messages, browse queue contents, and monitor queue statistics from the console.
+  </Accordion>
+
+  <Accordion title="REST APIs">
+    Anypoint MQ exposes three categories of REST APIs:
+
+    - **Admin API** -- Create and manage queues, exchanges, and bindings programmatically.
+    - **Broker API** -- Publish messages, retrieve messages, and acknowledge messages.
+    - **Stats API** -- Retrieve queue and exchange usage statistics.
+
+    These APIs enable automation, CI/CD integration, and use from non-Mule applications.
+  </Accordion>
+
+  <Accordion title="Connected Apps">
+    Use **Connected Apps** to grant external applications and services secure, scoped access to Anypoint MQ without sharing user credentials. Connected Apps leverage OAuth 2.0 client credentials and can be configured with fine-grained MQ-specific scopes.
+  </Accordion>
+
+  <Accordion title="Disaster Recovery">
+    Anypoint MQ is deployed across **multiple availability zones (multi-AZ)** within each supported region to provide high availability and resilience against datacenter failures. For cross-region disaster recovery, you can configure **fallback queues** that automatically activate when the primary region becomes unavailable.
+  </Accordion>
+
+  <Accordion title="Usage Statistics">
+    Track your Anypoint MQ API usage through the Anypoint Platform. Usage statistics help you understand consumption patterns, plan capacity, and manage billing. Statistics are available at the organization, environment, and queue level.
+  </Accordion>
+</AccordionGroup>
+
+## Control Plane Availability
+
+<Note>
+  Anypoint MQ is available in the following control plane regions:
+
+  - **US Cloud** and **EU Cloud**
+  - **Canada** and **Japan**
+  - **MuleSoft Government Cloud**
+
+  The specific message broker regions available within each control plane may vary. Consult the MuleSoft documentation for the most current list of supported regions.
+</Note>
+
+## Explore Anypoint MQ
+
+<CardGroup cols={3}>
+  <Card title="Queues" icon="inbox" href="/mq/queues">
+    Create and configure standard queues, FIFO queues, and dead-letter queues.
+  </Card>
+  <Card title="Exchanges" icon="arrows-split-up-and-left" href="/mq/exchanges">
+    Set up message exchanges for publish/subscribe messaging patterns.
+  </Card>
+  <Card title="Routing Rules" icon="route" href="/mq/routing-rules">
+    Define rules to selectively route messages from exchanges to queues.
+  </Card>
+  <Card title="Connectors" icon="plug" href="/mq/connectors">
+    Use the Anypoint MQ Connector in Mule applications to produce and consume messages.
+  </Card>
+  <Card title="Access Management" icon="users-gear" href="/mq/access-management">
+    Configure roles, permissions, and environment-level access for Anypoint MQ.
+  </Card>
+  <Card title="Connected Apps" icon="key" href="/mq/connected-apps">
+    Set up OAuth 2.0 connected apps for secure programmatic access.
+  </Card>
+  <Card title="Usage Statistics" icon="chart-bar" href="/mq/usage">
+    Monitor API usage, message throughput, and billing metrics.
+  </Card>
+  <Card title="REST APIs" icon="code" href="/mq/apis">
+    Access the Admin, Broker, and Stats APIs for programmatic control.
+  </Card>
+  <Card title="Cross-Region Failover" icon="shield-halved" href="/mq/failover">
+    Configure fallback queues for disaster recovery across regions.
+  </Card>
+  <Card title="FAQ" icon="circle-question" href="/mq/faq">
+    Find answers to frequently asked questions about Anypoint MQ.
+  </Card>
+  <Card title="Glossary" icon="book" href="/mq/glossary">
+    Review definitions of key Anypoint MQ terms and concepts.
+  </Card>
+</CardGroup>

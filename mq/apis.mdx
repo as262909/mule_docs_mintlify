@@ -1,0 +1,112 @@
+---
+title: "REST APIs"
+description: "Programmatically manage Anypoint MQ with the Admin, Broker, and Stats APIs"
+---
+
+## Overview
+
+Anypoint MQ provides three REST APIs for programmatic access to messaging resources. These APIs enable non-Mule applications and custom tooling to interact with MQ.
+
+<CardGroup cols={3}>
+  <Card title="Admin API" icon="gear">
+    Manage queues, exchanges, client apps, routing rules, and failover configuration. Create FIFO queues with `fifo: true`.
+  </Card>
+  <Card title="Broker API" icon="envelope">
+    Publish, consume, acknowledge (ACK), and negatively acknowledge (NACK) messages. Supports custom properties, routing properties, and lock-based retrieval.
+  </Card>
+  <Card title="Stats API" icon="chart-bar">
+    Retrieve real-time queue statistics, historical metrics, and organization/environment-level usage data.
+  </Card>
+</CardGroup>
+
+## Authentication
+
+Anypoint MQ APIs require bearer token authentication. There are multiple methods to obtain tokens depending on your use case.
+
+<AccordionGroup>
+  <Accordion title="Platform Credentials">
+    Authenticate using your Anypoint Platform username and password to obtain a bearer token. This method is suitable for interactive scripts and testing.
+
+    ```bash
+    curl -X POST https://anypoint.mulesoft.com/accounts/login \
+      -H "Content-Type: application/json" \
+      -d '{"username":"your-username","password":"your-password"}'
+    ```
+
+    Use the `access_token` from the response as the `Authorization: Bearer <token>` header in subsequent API calls.
+  </Accordion>
+  <Accordion title="Connected Apps (OAuth 2.0)">
+    Use OAuth 2.0 client credentials grant with a connected app. This is the recommended approach for production automation and supports MFA-enabled organizations.
+
+    ```bash
+    curl -X POST https://anypoint.mulesoft.com/accounts/api/v2/oauth2/token \
+      -H "Content-Type: application/x-www-form-urlencoded" \
+      -d "grant_type=client_credentials&client_id=YOUR_ID&client_secret=YOUR_SECRET"
+    ```
+  </Accordion>
+  <Accordion title="Client App Tokens (Broker API)">
+    For the Broker API, you can authenticate using a client app's Client ID and Client Secret to obtain a time-limited token.
+
+    <Warning>
+    Client app tokens expire after **60 minutes**. Your application must handle token refresh before expiration.
+    </Warning>
+
+    ```bash
+    curl -X POST https://mq-us-east-1.anypoint.mulesoft.com/api/v1/authorize \
+      -H "Content-Type: application/json" \
+      -d '{"clientId":"YOUR_CLIENT_ID","clientSecret":"YOUR_CLIENT_SECRET"}'
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Required Identifiers
+
+All MQ API calls require specific identifiers to target the correct resources.
+
+| Identifier | Description | Where to Find |
+|---|---|---|
+| `ORG_ID` | Your Anypoint Platform organization ID | Access Management > Organization |
+| `ENV_ID` | The target environment ID | Access Management > Environments |
+| `REGION_ID` | The MQ region (e.g., `us-east-1`) | Queue or exchange settings |
+| `QUEUE_ID` | The name of the target queue or exchange | MQ console > Destinations |
+
+<Tip>
+You can retrieve `ORG_ID` and `ENV_ID` programmatically using the Anypoint Platform Accounts API if you prefer not to look them up manually.
+</Tip>
+
+## Rate Limiting
+
+Anypoint MQ enforces rate limits to ensure platform stability.
+
+| Endpoint Type | Rate Limit |
+|---|---|
+| Organization-level endpoints (Admin API) | **10 transactions per minute (TPM)** |
+| All other endpoints | **200 transactions per minute (TPM)** |
+
+<Warning>
+Exceeding rate limits results in `429 Too Many Requests` responses. Implement exponential backoff and retry logic in your applications.
+</Warning>
+
+## Message Lifecycle
+
+Understanding the message lifecycle is critical for building reliable consumers.
+
+<Steps>
+  <Step title="Request">
+    A consumer requests messages from a queue via the Broker API. The API returns available messages (up to 10 per batch).
+  </Step>
+  <Step title="Lock">
+    Retrieved messages are **locked** for the duration of the acknowledgement timeout. Other consumers cannot see locked messages. Each message receives a unique **lock ID**.
+  </Step>
+  <Step title="ACK or NACK">
+    The consumer processes the message and sends an **ACK** (acknowledge) to permanently delete it, or a **NACK** (negative acknowledge) to release the lock and return the message to the queue.
+  </Step>
+  <Step title="Delete or Requeue">
+    - **ACK**: The message is permanently deleted from the queue.
+    - **NACK** or **timeout**: The message is requeued and becomes available for other consumers.
+  </Step>
+</Steps>
+
+<Note>
+If a consumer fails to ACK or NACK within the acknowledgement timeout, the message is automatically requeued. Design your consumers to process messages within the configured timeout window.
+</Note>

@@ -1,0 +1,179 @@
+---
+title: "Message Exchanges"
+description: "Send messages to multiple queues simultaneously using message exchanges"
+---
+
+## Overview
+
+A **message exchange** is a publish/subscribe mechanism in Anypoint MQ that distributes messages to one or more standard queues simultaneously. When a message is published to an exchange, Anypoint MQ delivers a copy of that message to every queue bound to the exchange. This enables fan-out messaging patterns where a single producer can broadcast events to multiple consumers without needing to know about each subscriber individually.
+
+Exchanges decouple the producer from the downstream processing logic. A producer publishes a message once, and Anypoint MQ handles the routing and delivery to all bound queues. New subscribers can be added or removed by binding or unbinding queues without modifying the producer.
+
+<Tip>
+  Combine message exchanges with **message-routing rules** to selectively route messages to specific bound queues based on message properties, rather than broadcasting every message to every queue. See [Message Routing Rules](/mq/routing-rules) for details.
+</Tip>
+
+## Limits and Constraints
+
+| Limit | Value |
+|---|---|
+| Maximum message size | **10 MB** |
+| Maximum queue bindings per exchange | **450** |
+| Maximum queue bindings with routing rules | **10** |
+
+<Warning>
+  Message exchanges support only the **Publish** operation. You cannot consume messages directly from an exchange. Attempting to consume from an exchange results in the error:
+
+  `"The destination should be a queue."`
+
+  To consume messages routed through an exchange, subscribe to the individual queues bound to that exchange.
+</Warning>
+
+## Creating a Message Exchange
+
+<Steps>
+  <Step title="Sign In to Anypoint Platform">
+    Navigate to [Anypoint Platform](https://anypoint.mulesoft.com) and sign in with your credentials. Ensure you have the appropriate MQ permissions for the target environment.
+  </Step>
+
+  <Step title="Open the MQ Console">
+    From the main navigation menu, select **MQ**. Choose the appropriate **environment** and **region** from the dropdowns at the top of the page.
+  </Step>
+
+  <Step title="Create the Exchange">
+    Click the **+ (plus)** button and select **Exchange**. The exchange creation form opens.
+  </Step>
+
+  <Step title="Name the Exchange">
+    Enter a unique name for the exchange. Exchange names must follow these rules:
+
+    | Rule | Detail |
+    |---|---|
+    | Allowed characters | Alphanumeric characters, periods (`.`), and hyphens (`-`) |
+    | Maximum length | **127 characters** |
+    | Case sensitivity | Exchange names are case-sensitive |
+  </Step>
+
+  <Step title="Bind Queues to the Exchange">
+    Select the standard queues you want to bind to this exchange. Bound queues receive a copy of every message published to the exchange. You can bind queues now or add them later.
+
+    <Note>
+      Only **standard queues** can be bound to an exchange. FIFO queues are not supported as exchange bindings.
+    </Note>
+  </Step>
+
+  <Step title="Save the Exchange">
+    Click **Create Exchange**. The exchange appears in the destinations list and is immediately available for publishing messages.
+  </Step>
+</Steps>
+
+## Binding and Unbinding Queues
+
+You can add or remove queue bindings at any time after creating an exchange. Modifying bindings does not affect messages already delivered to queues.
+
+### Binding Queues
+
+<Steps>
+  <Step title="Open the Exchange">
+    In the MQ console, click the name of the exchange you want to modify.
+  </Step>
+
+  <Step title="Add Bindings">
+    Click the **Bind** button. Select one or more queues from the list of available standard queues. You can select multiple queues to bind them in a single batch operation.
+  </Step>
+
+  <Step title="Confirm the Bindings">
+    Click **Save** to apply the new bindings. The newly bound queues begin receiving messages published to the exchange immediately.
+  </Step>
+</Steps>
+
+### Unbinding Queues
+
+<Steps>
+  <Step title="Open the Exchange">
+    In the MQ console, click the name of the exchange.
+  </Step>
+
+  <Step title="Remove Bindings">
+    Select the queues you want to unbind and click the **Unbind** button. You can select multiple queues to unbind them in a single batch operation.
+  </Step>
+
+  <Step title="Confirm the Unbinding">
+    Confirm the action. The unbound queues stop receiving new messages from the exchange immediately. Messages already delivered to those queues remain unaffected.
+  </Step>
+</Steps>
+
+<Tip>
+  Use batch operations to bind or unbind multiple queues at once, rather than modifying them one at a time. This is especially useful when reconfiguring an exchange with many bindings.
+</Tip>
+
+## Sending Messages to an Exchange
+
+You can publish messages to an exchange from the MQ console, the Anypoint MQ Connector, or the Broker REST API. When a message is published to an exchange, Anypoint MQ delivers a copy to every bound queue.
+
+### From the MQ Console
+
+<Steps>
+  <Step title="Select the Exchange">
+    In the MQ console, click the name of the exchange you want to send a message to.
+  </Step>
+
+  <Step title="Open the Message Sender">
+    Click the **Message Sender** tab in the exchange detail view.
+  </Step>
+
+  <Step title="Compose the Message">
+    Enter the message payload in the text area. Supported content types include:
+
+    | Type | Description |
+    |---|---|
+    | **Plain Text** | Unstructured text content. |
+    | **JSON** | Structured JSON objects or arrays. |
+    | **CSV** | Comma-separated values for tabular data. |
+  </Step>
+
+  <Step title="Add Message Properties (Optional)">
+    Expand the properties section to add key-value pairs as message headers. These properties can be used by [routing rules](/mq/routing-rules) to selectively deliver messages to specific bound queues.
+  </Step>
+
+  <Step title="Send the Message">
+    Click **Send**. Anypoint MQ delivers a copy of the message to every queue bound to the exchange (subject to any configured routing rules).
+  </Step>
+</Steps>
+
+<Note>
+  Non-text payloads (such as binary content) are **converted to a string representation** before sending. If your application requires binary message support, encode the payload (for example, using Base64) before publishing.
+</Note>
+
+## Deleting a Message Exchange
+
+Deleting an exchange permanently removes it and all of its queue bindings. The bound queues themselves are not deleted, but they stop receiving messages from the exchange.
+
+<Steps>
+  <Step title="Navigate to the Exchange">
+    In the MQ console, locate the exchange in the destinations list.
+  </Step>
+
+  <Step title="Delete the Exchange">
+    Click the **trash/delete** icon or select **Delete** from the exchange actions menu. A confirmation dialog appears.
+  </Step>
+
+  <Step title="Confirm Deletion">
+    Select the confirmation checkbox to acknowledge that the exchange and all of its bindings will be permanently removed. Click **Delete** to confirm.
+  </Step>
+</Steps>
+
+<Warning>
+  Deleting an exchange is **irreversible**. All bindings associated with the exchange are removed. Queues that were bound to the exchange are not deleted, but they will no longer receive messages from this exchange. Ensure no active producers depend on this exchange before deleting.
+</Warning>
+
+## Related Topics
+
+<CardGroup cols={2}>
+  <Card title="Message Routing Rules" icon="route" href="/mq/routing-rules">
+    Define rules to selectively route messages from an exchange to specific bound queues based on message properties.
+  </Card>
+  <Card title="Queues" icon="inbox" href="/mq/queues">
+    Create and configure the standard queues that receive messages from exchanges.
+  </Card>
+</CardGroup>

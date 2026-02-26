@@ -1,0 +1,68 @@
+---
+title: "DataWeave"
+description: "Transform data between formats with MuleSoft's expression language"
+---
+
+## Overview
+
+DataWeave is MuleSoft's primary language for data transformation. It enables you to map, convert, and restructure data between formats like JSON, XML, CSV, and Java objects.
+
+## Basic Syntax
+
+A DataWeave script has two sections separated by `---`:
+
+```dataweave
+%dw 2.0
+output application/json
+---
+{
+  name: payload.firstName ++ " " ++ payload.lastName,
+  email: payload.email
+}
+```
+
+## Supported Formats
+
+| Format | MIME Type |
+|--------|-----------|
+| JSON | `application/json` |
+| XML | `application/xml` |
+| CSV | `application/csv` |
+| Java | `application/java` |
+| Flat File | `text/flatfile` |
+
+## Common Operations
+
+### Mapping
+
+```dataweave
+%dw 2.0
+output application/json
+---
+payload.items map {
+  productName: $.name,
+  totalPrice: $.price * $.quantity
+}
+```
+
+### Filtering
+
+```dataweave
+%dw 2.0
+output application/json
+---
+payload.orders filter ($.amount > 100)
+```
+
+### Grouping
+
+```dataweave
+%dw 2.0
+output application/json
+---
+payload.employees groupBy $.department
+```
+
+<Tip>
+  Use the DataWeave Playground in Anypoint Studio to test transformations interactively.
+</Tip>

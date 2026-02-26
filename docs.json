@@ -1,0 +1,106 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "mint",
+  "name": "MuleSoft Documentation",
+  "colors": {
+    "primary": "#00A1DF",
+    "light": "#00C7FF",
+    "dark": "#0077B5"
+  },
+  "logo": {
+    "light": "/logo/light.svg",
+    "dark": "/logo/dark.svg"
+  },
+  "favicon": "/favicon.svg",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Guides",
+        "groups": [
+          {
+            "group": "Getting Started",
+            "pages": ["index", "quickstart"]
+          },
+          {
+            "group": "MuleSoft Basics",
+            "pages": [
+              "guides/what-is-mulesoft",
+              "guides/anypoint-platform",
+              "guides/mule-runtime"
+            ]
+          },
+          {
+            "group": "Building Integrations",
+            "pages": [
+              "guides/first-mule-app",
+              "guides/connectors",
+              "guides/dataweave"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Anypoint MQ",
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": ["mq/index"]
+          },
+          {
+            "group": "Core Concepts",
+            "pages": [
+              "mq/queues",
+              "mq/exchanges",
+              "mq/routing-rules"
+            ]
+          },
+          {
+            "group": "Configuration",
+            "pages": [
+              "mq/connectors",
+              "mq/access-management",
+              "mq/connected-apps",
+              "mq/failover"
+            ]
+          },
+          {
+            "group": "Operations",
+            "pages": [
+              "mq/apis",
+              "mq/usage"
+            ]
+          },
+          {
+            "group": "Reference",
+            "pages": [
+              "mq/faq",
+              "mq/glossary"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "API Reference",
+            "pages": ["api-reference/introduction"]
+          }
+        ]
+      }
+    ]
+  },
+  "navbar": {
+    "links": [
+      {
+        "label": "GitHub",
+        "url": "https://github.com/as262909/mule_docs_mintlify"
+      }
+    ]
+  },
+  "footer": {
+    "socials": {
+      "github": "https://github.com/as262909/mule_docs_mintlify"
+    }
+  }
+}

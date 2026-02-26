@@ -1,0 +1,378 @@
+---
+title: "Configuring and Using Queues"
+description: "Create and manage standard queues, FIFO queues, and dead-letter queues"
+---
+
+## Queue Types
+
+Anypoint MQ supports two primary queue types, each designed for different messaging requirements. Choose the type that best fits your use case before creating a queue, as the type cannot be changed after creation.
+
+<CardGroup cols={2}>
+  <Card title="Standard Queues" icon="bolt">
+    **Best-effort ordering** with maximum throughput.
+
+    - No guaranteed message ordering
+    - Up to **120,000 in-flight messages**
+    - **At-least-once** delivery (messages may be delivered more than once)
+    - Supports **cross-region failover** with fallback queues
+    - Ideal for high-volume workloads where ordering is not critical
+  </Card>
+  <Card title="FIFO Queues" icon="arrow-down-1-9">
+    **Strict first-in-first-out** ordering with deduplication.
+
+    - Guaranteed message ordering within each message group
+    - Up to **10 in-flight messages** per message group
+    - **Exactly-once** delivery (duplicates are eliminated)
+    - **300 TPS** per message group (up to **3,000 TPS** with batching of 10)
+    - Ideal for workflows requiring sequential processing
+  </Card>
+</CardGroup>
+
+<Warning>
+  The queue type (standard or FIFO) is set at creation time and **cannot be changed** afterward. If you need to switch types, you must create a new queue and migrate your producers and consumers.
+</Warning>
+
+## Creating a Queue
+
+Follow these steps to create a new queue in the Anypoint MQ management console.
+
+<Steps>
+  <Step title="Sign In to Anypoint Platform">
+    Navigate to [Anypoint Platform](https://anypoint.mulesoft.com) and sign in with your credentials. Ensure you have the appropriate MQ permissions for the target environment.
+  </Step>
+
+  <Step title="Open the MQ Console">
+    From the main navigation menu, select **MQ**. Choose the appropriate **environment** and **region** from the dropdowns at the top of the page.
+  </Step>
+
+  <Step title="Create the Queue">
+    Click the **+ (plus)** button and select **Queue** (or **FIFO Queue** for a FIFO queue). The queue creation form opens.
+  </Step>
+
+  <Step title="Configure Queue Settings">
+    Fill in the following settings:
+
+    | Setting | Description | Default |
+    |---|---|---|
+    | **Queue ID** | A unique name for the queue. FIFO queue IDs automatically receive a `.fifo` suffix. | -- |
+    | **Default TTL** | How long a message remains in the queue before expiring (in minutes, hours, or days). | 7 days |
+    | **Default Acknowledgment Timeout** | The time a consumer has to acknowledge a message before it returns to the queue. | 2 minutes |
+    | **Default Delivery Delay** | Time to wait before making a new message available to consumers. | None |
+    | **Encryption** | Enable server-side encryption of message payloads at rest. | Disabled |
+    | **Dead-Letter Queue** | Optionally assign a dead-letter queue to capture unprocessable messages. | None |
+
+    <Tip>
+      Set the **acknowledgment timeout** to be longer than your expected processing time. If a consumer cannot process and acknowledge within this window, the message returns to the queue and is redelivered.
+    </Tip>
+  </Step>
+
+  <Step title="Save the Queue">
+    Click **Create Queue**. The queue appears in the queue list and is immediately available for producing and consuming messages.
+  </Step>
+</Steps>
+
+## Sending Messages
+
+You can send messages to a queue from the MQ console, the Anypoint MQ Connector, or the Broker REST API.
+
+### From the MQ Console
+
+<Steps>
+  <Step title="Select the Queue">
+    In the MQ console, click the name of the queue you want to send a message to.
+  </Step>
+  <Step title="Open the Message Sender">
+    Click the **Message Sender** tab in the queue detail view.
+  </Step>
+  <Step title="Compose and Send">
+    Enter the message body in the text area. You can send plain text, CSV, or JSON content. Optionally add **message properties** (key-value headers). Click **Send**.
+  </Step>
+</Steps>
+
+<Note>
+  The maximum message payload size is **10 MB**. Messages exceeding this limit are rejected. For FIFO queues, you can also specify a **Message Group ID** to control ordering within groups.
+</Note>
+
+### Supported Content Types
+
+| Type | Description |
+|---|---|
+| **Plain Text** | Unstructured text content. |
+| **CSV** | Comma-separated values for tabular data. |
+| **JSON** | Structured JSON objects or arrays. |
+
+## Retrieving Messages
+
+Consumers retrieve messages from queues using polling. Anypoint MQ supports both short polling and long polling.
+
+### Polling Configuration
+
+| Parameter | Range | Description |
+|---|---|---|
+| **Number of messages** | 1--500 | Maximum number of messages to retrieve in a single request. |
+| **Polling time** | 1--3,600 seconds | How long the request waits for messages if the queue is empty (long polling). |
+
+<Tip>
+  Use **long polling** (polling time > 0) whenever possible. Long polling reduces the number of empty responses and API calls, lowering costs and improving consumer efficiency.
+</Tip>
+
+### From the MQ Console
+
+<Steps>
+  <Step title="Select the Queue">
+    Click the name of the queue in the MQ console.
+  </Step>
+  <Step title="Open the Message Browser">
+    Click the **Message Browser** tab.
+  </Step>
+  <Step title="Retrieve Messages">
+    Configure the number of messages and polling time. Click **Get Messages**. Messages appear in the list below.
+  </Step>
+  <Step title="View Message Details">
+    Click a message to view its payload, properties, and metadata. You can then acknowledge or return the message.
+  </Step>
+</Steps>
+
+### Lock-and-Acknowledge Mechanism
+
+When a consumer retrieves a message, Anypoint MQ **locks** that message for the duration of the acknowledgment timeout. During this lock period:
+
+1. The message is invisible to other consumers.
+2. The consumer processes the message.
+3. The consumer sends an **acknowledgment (ACK)** to permanently remove the message from the queue.
+4. If the consumer fails to acknowledge before the timeout expires, the lock releases and the message becomes available for redelivery.
+
+<Warning>
+  If your application does not explicitly acknowledge messages, they will be redelivered repeatedly until the message TTL expires. Always implement proper acknowledgment logic in your consumers.
+</Warning>
+
+## Dead-Letter Queues
+
+A **dead-letter queue (DLQ)** captures messages that consumers cannot process successfully after a specified number of delivery attempts. This prevents problematic messages from blocking the queue and provides a holding area for inspection and remediation.
+
+### DLQ Requirements
+
+<Note>
+  Dead-letter queues have the following constraints:
+
+  - The DLQ must be the **same type** as the source queue (standard DLQ for standard queues, FIFO DLQ for FIFO queues).
+  - The DLQ must be in the **same region**, **same environment**, and **same Anypoint Platform account** as the source queue.
+  - A queue **cannot be assigned as its own** dead-letter queue.
+</Note>
+
+### Configuring a Dead-Letter Queue
+
+| Setting | Range | Description |
+|---|---|---|
+| **Dead-Letter Queue** | Any eligible queue | The queue that receives unprocessable messages. |
+| **Maximum Delivery Attempts** | 1--1,000 | The number of times Anypoint MQ attempts to deliver a message before routing it to the DLQ. |
+
+<Steps>
+  <Step title="Create the DLQ First">
+    Create a queue that will serve as the dead-letter queue. It must be the same type (standard or FIFO) as the source queue.
+  </Step>
+  <Step title="Assign the DLQ to the Source Queue">
+    Edit the source queue settings (or configure during creation). Under **Dead-Letter Queue**, select the DLQ and set the **maximum delivery attempts** (1--1,000).
+  </Step>
+  <Step title="Monitor the DLQ">
+    Regularly inspect messages in the DLQ to identify and resolve processing failures. You can reprocess messages by moving them back to the source queue or handling them through a separate consumer.
+  </Step>
+</Steps>
+
+<Tip>
+  Set the DLQ's **TTL** to be longer than the source queue's TTL. This ensures messages in the DLQ remain available for inspection even after they would have expired in the original queue.
+</Tip>
+
+## FIFO Queue Features
+
+FIFO (First-In-First-Out) queues provide additional capabilities beyond strict ordering.
+
+### Message Groups
+
+Message groups allow you to partition messages within a single FIFO queue. Messages within the same group are delivered in strict order, but messages in different groups can be processed in parallel.
+
+<AccordionGroup>
+  <Accordion title="How Message Groups Work">
+    Each message sent to a FIFO queue includes a **Message Group ID**. Anypoint MQ guarantees ordering only within messages sharing the same group ID. This enables parallelism: if you have 100 message groups, up to 100 messages (one per group) can be in-flight simultaneously, even though each group maintains strict ordering.
+  </Accordion>
+
+  <Accordion title="Connector Configuration for FIFO">
+    When using the Anypoint MQ Connector with FIFO queues, apply the following settings for correct behavior:
+
+    ```xml
+    <anypoint-mq:subscriber
+        config-ref="Anypoint_MQ_Config"
+        destination="myQueue.fifo"
+        subscriber-type="polling"
+        fetchSize="1"
+        maxConcurrency="1" />
+    ```
+
+    | Parameter | Value | Reason |
+    |---|---|---|
+    | `subscriber-type` | `polling` | Required for FIFO queues. Event-based subscribers are not supported. |
+    | `fetchSize` | `1` | Retrieve one message at a time to maintain strict ordering. |
+    | `maxConcurrency` | `1` | Process one message at a time per message group to preserve order. |
+
+    <Warning>
+      Setting `fetchSize` or `maxConcurrency` to values greater than 1 on a FIFO queue can result in **out-of-order processing**. Always use `1` for both settings unless you fully understand the implications for your message groups.
+    </Warning>
+  </Accordion>
+
+  <Accordion title="Deduplication">
+    FIFO queues provide a **5-minute deduplication window**. If a message with the same deduplication ID is sent within 5 minutes of a previously accepted message, the duplicate is silently discarded. This ensures exactly-once delivery even if producers retry.
+
+    <Note>
+      The deduplication window is fixed at 5 minutes and cannot be configured. If your producer retries may occur beyond this window, implement application-level idempotency checks.
+    </Note>
+  </Accordion>
+</AccordionGroup>
+
+### FIFO Throughput Limits
+
+| Metric | Limit |
+|---|---|
+| Transactions per second (TPS) per message group | **300** |
+| TPS with batching (batch size of 10) | **3,000** |
+| In-flight messages per message group | **10** |
+
+<Tip>
+  To maximize FIFO throughput, use **multiple message groups**. Each group has its own independent TPS limit. For example, 10 message groups provide an effective throughput of up to 3,000 TPS (or 30,000 TPS with batching).
+</Tip>
+
+## Queue Management
+
+### Purging a Queue
+
+Purging permanently removes **all messages** from a queue. This is useful for clearing test data or resetting a queue.
+
+<Warning>
+  Purging is **irreversible**. All messages in the queue, including in-flight messages, are permanently deleted. This action cannot be undone.
+</Warning>
+
+<Steps>
+  <Step title="Navigate to the Queue">
+    In the MQ console, click the name of the queue you want to purge.
+  </Step>
+  <Step title="Purge the Queue">
+    Click the **Purge Messages** button (or select **Purge** from the queue actions menu). Confirm the action in the dialog.
+  </Step>
+</Steps>
+
+### Changing Queue Settings
+
+You can modify the following settings on an existing queue:
+
+- **Default TTL**
+- **Default Acknowledgment Timeout**
+- **Default Delivery Delay**
+- **Encryption** (enable or disable)
+- **Dead-Letter Queue assignment** and maximum delivery attempts
+
+<Note>
+  You **cannot** change the queue type (standard to FIFO or vice versa) or the queue ID after creation.
+</Note>
+
+<Steps>
+  <Step title="Open Queue Settings">
+    In the MQ console, click the name of the queue. Click the **Settings** icon or select **Edit** from the queue actions menu.
+  </Step>
+  <Step title="Modify Settings">
+    Update the desired fields and click **Save Changes**.
+  </Step>
+</Steps>
+
+### Deleting a Queue
+
+Deleting a queue permanently removes the queue and **all of its messages**.
+
+<Warning>
+  Deleting a queue is **irreversible**. All messages currently in the queue are **permanently lost**. Ensure all messages have been consumed or are no longer needed before deleting.
+
+  If other applications reference this queue (as a consumer, producer, or DLQ assignment), update those references before deletion to avoid errors.
+</Warning>
+
+<Steps>
+  <Step title="Navigate to the Queue">
+    In the MQ console, locate the queue in the queue list.
+  </Step>
+  <Step title="Delete the Queue">
+    Click the **trash/delete** icon or select **Delete** from the queue actions menu. Confirm the deletion in the dialog.
+  </Step>
+</Steps>
+
+## Fallback Queues for Cross-Region Failover
+
+Anypoint MQ supports **cross-region failover** for standard queues through fallback queues. When the primary region becomes unavailable, producers and consumers automatically redirect to the fallback queue in a secondary region.
+
+### How Fallback Queues Work
+
+<AccordionGroup>
+  <Accordion title="Naming Convention">
+    Fallback queues are identified by a **`_fb`** suffix appended to the original queue name. For example, if your primary queue is named `orders`, the fallback queue is named `orders_fb`.
+
+    The fallback queue must be created manually in the secondary region with the `_fb` suffix before failover can occur.
+  </Accordion>
+
+  <Accordion title="Failover Behavior">
+    When the primary region is unavailable:
+
+    1. The Anypoint MQ Connector detects the regional outage.
+    2. Producers automatically redirect messages to the fallback queue (`_fb`) in the secondary region.
+    3. Consumers switch to polling the fallback queue.
+    4. When the primary region recovers, traffic returns to the original queue.
+
+    <Note>
+      Messages already in the fallback queue at the time of recovery remain in the fallback queue. Consumers should continue to drain the fallback queue even after the primary region is restored.
+    </Note>
+  </Accordion>
+
+  <Accordion title="Requirements and Limitations">
+    - Cross-region failover is supported for **standard queues only**. FIFO queues do not support fallback queues.
+    - The fallback queue must be a **standard queue** in a **different region** from the primary queue.
+    - The fallback queue must be in the **same environment** and **same Anypoint Platform account**.
+    - Message ordering is **not guaranteed** across the primary and fallback queues during a failover event.
+  </Accordion>
+</AccordionGroup>
+
+## Quick Reference
+
+<AccordionGroup>
+  <Accordion title="Standard Queue Limits">
+    | Limit | Value |
+    |---|---|
+    | Maximum message size | 10 MB |
+    | Maximum in-flight messages | 120,000 |
+    | Default TTL | 7 days (configurable) |
+    | Maximum TTL | 14 days |
+    | Acknowledgment timeout range | 1 second -- 12 hours |
+    | Delivery guarantee | At-least-once |
+    | Message ordering | Best-effort (not guaranteed) |
+    | Cross-region failover | Supported |
+  </Accordion>
+
+  <Accordion title="FIFO Queue Limits">
+    | Limit | Value |
+    |---|---|
+    | Maximum message size | 10 MB |
+    | Maximum in-flight messages per group | 10 |
+    | Default TTL | 7 days (configurable) |
+    | Maximum TTL | 14 days |
+    | Acknowledgment timeout range | 1 second -- 12 hours |
+    | Delivery guarantee | Exactly-once |
+    | Message ordering | Strict FIFO (per message group) |
+    | TPS per message group | 300 (3,000 with batching) |
+    | Deduplication window | 5 minutes |
+    | Cross-region failover | Not supported |
+  </Accordion>
+
+  <Accordion title="Dead-Letter Queue Limits">
+    | Limit | Value |
+    |---|---|
+    | Maximum delivery attempts | 1--1,000 |
+    | Type requirement | Must match source queue type |
+    | Region requirement | Same region as source queue |
+    | Environment requirement | Same environment as source queue |
+    | Account requirement | Same Anypoint Platform account |
+  </Accordion>
+</AccordionGroup>

@@ -1,0 +1,36 @@
+---
+title: "API Reference"
+description: "Anypoint MQ REST API documentation"
+---
+
+## Overview
+
+Anypoint MQ provides three REST APIs for programmatic access to messaging capabilities.
+
+<CardGroup cols={3}>
+  <Card title="Admin API" icon="gear">
+    Manage queues, exchanges, and client applications.
+  </Card>
+  <Card title="Broker API" icon="envelope">
+    Publish, consume, acknowledge, and reject messages.
+  </Card>
+  <Card title="Stats API" icon="chart-bar">
+    Retrieve queue statistics and usage metrics.
+  </Card>
+</CardGroup>
+
+## Authentication
+
+All API requests require a bearer token. See the [REST APIs guide](/mq/apis) for authentication details.
+
+## Base URLs
+
+| API | Base URL |
+|-----|----------|
+| Admin | `https://anypoint.mulesoft.com/mq/admin/api/v1` |
+| Broker | `https://mq-us-east-1.anypoint.mulesoft.com/api/v1` |
+| Stats | `https://anypoint.mulesoft.com/mq/stats/api/v1` |
+
+<Note>
+  Broker API base URLs vary by region. Replace `us-east-1` with your deployment region.
+</Note>

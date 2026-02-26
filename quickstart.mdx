@@ -1,0 +1,60 @@
+---
+title: "Quickstart"
+description: "Get started with MuleSoft development in minutes"
+---
+
+## Prerequisites
+
+Before you begin, make sure you have:
+
+- **Anypoint Studio** installed ([download here](https://www.mulesoft.com/lp/dl/anypoint-mule-studio))
+- An **Anypoint Platform** account ([sign up free](https://anypoint.mulesoft.com/login/signup))
+- **Java JDK 8 or 11** installed
+
+## Step 1: Set Up Anypoint Studio
+
+<AccordionGroup>
+  <Accordion icon="download" title="Install Anypoint Studio">
+    1. Download Anypoint Studio from the MuleSoft website.
+    2. Extract the archive to your preferred location.
+    3. Launch Anypoint Studio and select a workspace directory.
+
+    <Tip>Anypoint Studio is built on Eclipse and comes with an embedded Mule runtime for testing.</Tip>
+  </Accordion>
+</AccordionGroup>
+
+## Step 2: Create Your First Project
+
+<AccordionGroup>
+  <Accordion icon="folder-plus" title="Create a new Mule project">
+    1. Go to **File > New > Mule Project**.
+    2. Enter a project name (e.g., `my-first-mule-app`).
+    3. Select the Mule runtime version.
+    4. Click **Finish**.
+  </Accordion>
+  <Accordion icon="pen-to-square" title="Add an HTTP Listener">
+    1. In the Mule Palette, search for **HTTP Listener**.
+    2. Drag it onto the canvas.
+    3. Configure the listener with host `0.0.0.0` and port `8081`.
+    4. Set the path to `/hello`.
+  </Accordion>
+</AccordionGroup>
+
+## Step 3: Run and Test
+
+<Accordion icon="play" title="Run your app">
+  1. Right-click the project and select **Run As > Mule Application**.
+  2. Wait for the console to show "DEPLOYED".
+  3. Open `http://localhost:8081/hello` in your browser.
+</Accordion>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Connectors" icon="plug" href="/guides/connectors">
+    Learn about MuleSoft connectors for integrating systems.
+  </Card>
+  <Card title="DataWeave" icon="code" href="/guides/dataweave">
+    Master data transformation with DataWeave.
+  </Card>
+</CardGroup>

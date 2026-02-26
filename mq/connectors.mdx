@@ -1,0 +1,162 @@
+---
+title: "Anypoint MQ Connectors"
+description: "Connect Mule applications to Anypoint MQ using the MQ connector"
+---
+
+## Overview
+
+The **Anypoint Connector for Anypoint MQ** enables Mule applications to produce and consume messages from Anypoint MQ queues and exchanges. The connector is available in Anypoint Studio and Design Center, providing native integration between your Mule flows and the Anypoint MQ messaging service.
+
+<Note>
+  The Anypoint MQ Connector is supported for **Mule 4 only**. Mule 3 applications must use the legacy Anypoint MQ connector, which is no longer actively maintained. If you are still on Mule 3, plan a migration to Mule 4 to take advantage of the latest connector features and ongoing support.
+</Note>
+
+## Connector Versions
+
+Anypoint MQ Connector is available in multiple major versions. Each version builds on the previous one with additional features and broader platform support. Choose the version that matches your Mule runtime and deployment requirements.
+
+<CardGroup cols={3}>
+  <Card title="Connector 4.x (Latest)" icon="star">
+    The latest and recommended version of the Anypoint MQ Connector.
+
+    **Key Operations:**
+    - **ACK** -- Acknowledge a message to remove it from the queue
+    - **NACK** -- Negatively acknowledge a message to return it to the queue
+    - **Subscribe** -- Listen for incoming messages on a queue
+    - **Consume** -- Poll a queue for messages on demand
+    - **Publish** -- Send messages to a queue or exchange
+
+    **Platform Support:**
+    - US Cloud, EU Cloud, Canada, Japan, and MuleSoft Government Cloud
+  </Card>
+  <Card title="Connector 3.x" icon="cube">
+    A stable release with the same core operations as Connector 4.x.
+
+    **Key Operations:**
+    - ACK, NACK, Subscribe, Consume, Publish
+
+    **Platform Support:**
+    - US Cloud and EU Cloud only
+
+    <Warning>
+      Connector 3.x does not support Canada, Japan, or MuleSoft Government Cloud regions. Use Connector 4.x for deployments in these regions.
+    </Warning>
+  </Card>
+  <Card title="Connector 2.x" icon="cube-transparent">
+    The foundational version providing basic Anypoint MQ connectivity.
+
+    **Key Operations:**
+    - Core publish and consume operations
+
+    **Platform Support:**
+    - US Cloud and EU Cloud only
+  </Card>
+</CardGroup>
+
+<Tip>
+  Always use the **latest Connector 4.x version** for new projects. It provides the broadest platform support, the latest features (including numeric routing rules with version 3.2.0+), and ongoing maintenance and bug fixes.
+</Tip>
+
+## Connector Operations
+
+The following table summarizes the operations available across connector versions.
+
+| Operation | Description | 4.x | 3.x | 2.x |
+|---|---|---|---|---|
+| **Publish** | Send a message to a queue or exchange. Supports message properties and headers. | Yes | Yes | Yes |
+| **Consume** | Retrieve a message from a queue on demand (synchronous polling). | Yes | Yes | Yes |
+| **Subscribe** | Listen for messages on a queue asynchronously. Triggers a Mule flow for each incoming message. | Yes | Yes | -- |
+| **ACK** | Acknowledge successful processing of a message, permanently removing it from the queue. | Yes | Yes | -- |
+| **NACK** | Negatively acknowledge a message, returning it to the queue for redelivery. | Yes | Yes | -- |
+
+<AccordionGroup>
+  <Accordion title="Publish">
+    The **Publish** operation sends a message to an Anypoint MQ queue or exchange. You can include a message body, custom properties (headers), and content type metadata.
+
+    ```xml
+    <anypoint-mq:publish
+        config-ref="Anypoint_MQ_Config"
+        destination="my-queue">
+      <anypoint-mq:body>#[payload]</anypoint-mq:body>
+      <anypoint-mq:properties>#[{'orderType': 'premium', 'region': 'us-east'}]</anypoint-mq:properties>
+    </anypoint-mq:publish>
+    ```
+
+    When publishing to an exchange, the message is delivered to all bound queues (subject to any configured [routing rules](/mq/routing-rules)).
+  </Accordion>
+
+  <Accordion title="Consume">
+    The **Consume** operation retrieves a message from a queue synchronously. Use this when your flow needs to poll for messages at specific points rather than listening continuously.
+
+    ```xml
+    <anypoint-mq:consume
+        config-ref="Anypoint_MQ_Config"
+        destination="my-queue"
+        acknowledgementMode="MANUAL" />
+    ```
+
+    The `acknowledgementMode` can be set to `IMMEDIATE` (auto-acknowledge on receipt) or `MANUAL` (your flow must explicitly ACK or NACK).
+  </Accordion>
+
+  <Accordion title="Subscribe">
+    The **Subscribe** operation acts as a message source that triggers a Mule flow each time a new message arrives on the specified queue.
+
+    ```xml
+    <flow name="order-processor">
+      <anypoint-mq:subscriber
+          config-ref="Anypoint_MQ_Config"
+          destination="order-queue" />
+      <!-- Flow processors here -->
+    </flow>
+    ```
+
+    For FIFO queues, set `subscriber-type="polling"`, `fetchSize="1"`, and `maxConcurrency="1"` to maintain strict message ordering.
+  </Accordion>
+
+  <Accordion title="ACK and NACK">
+    **ACK** confirms that a message was processed successfully. Anypoint MQ permanently removes the message from the queue.
+
+    **NACK** indicates that processing failed or the message should be redelivered. Anypoint MQ returns the message to the queue immediately, making it available to other consumers.
+
+    ```xml
+    <!-- Acknowledge -->
+    <anypoint-mq:ack config-ref="Anypoint_MQ_Config"
+        ackToken="#[attributes.ackToken]" />
+
+    <!-- Negatively Acknowledge -->
+    <anypoint-mq:nack config-ref="Anypoint_MQ_Config"
+        ackToken="#[attributes.ackToken]" />
+    ```
+
+    <Warning>
+      If you use `MANUAL` acknowledgment mode and do not explicitly ACK or NACK, the message remains locked until the acknowledgment timeout expires, then returns to the queue for redelivery. Always include ACK/NACK logic in your error handling.
+    </Warning>
+  </Accordion>
+</AccordionGroup>
+
+## Supporting APIs
+
+In addition to the connector, Anypoint MQ provides REST APIs for programmatic access from any language or platform.
+
+<CardGroup cols={3}>
+  <Card title="Admin API" icon="gear">
+    Create and manage queues, exchanges, and bindings programmatically. Use the Admin API for automation, CI/CD pipelines, and infrastructure-as-code workflows.
+  </Card>
+  <Card title="Broker API" icon="envelope">
+    Publish messages, retrieve messages, and acknowledge messages via REST. The Broker API enables non-Mule applications to interact with Anypoint MQ.
+  </Card>
+  <Card title="Stats API" icon="chart-bar">
+    Retrieve usage statistics for queues and exchanges, including message counts, throughput metrics, and API call volumes.
+  </Card>
+</CardGroup>
+
+## Additional Resources
+
+<CardGroup cols={2}>
+  <Card title="FAQ" icon="circle-question" href="/mq/faq">
+    Find answers to frequently asked questions about Anypoint MQ, including connector configuration, troubleshooting, and best practices.
+  </Card>
+  <Card title="Release Notes" icon="file-lines" href="/mq/release-notes">
+    Review the latest changes, bug fixes, and new features for each connector version.
+  </Card>
+</CardGroup>

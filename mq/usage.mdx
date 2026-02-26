@@ -1,0 +1,82 @@
+---
+title: "Usage Data"
+description: "View Anypoint MQ usage metrics and billing information"
+---
+
+## API Requests
+
+Every API call to Anypoint MQ counts as one billable request. This includes all operations performed through the MQ connector, REST APIs, and the Anypoint Platform UI.
+
+<CardGroup cols={2}>
+  <Card title="Billable Operations" icon="receipt">
+    - Sending a message
+    - Receiving a message
+    - Acknowledging a message
+    - Queue and exchange operations (create, modify, delete)
+  </Card>
+  <Card title="Non-Billable Operations" icon="circle-check">
+    - Stats API requests
+    - Messages routed to a dead letter queue (DLQ)
+  </Card>
+</CardGroup>
+
+<Tip>
+A single API call that returns up to 10 messages (such as a batch receive) is billed as **one request**, not one per message. Use batch operations where possible to optimize API request usage.
+</Tip>
+
+## Message Units
+
+<Note>
+Message units are not used for billing. They measure the response data size for monitoring purposes. Each message unit represents **100 KB** of response data.
+</Note>
+
+A single message larger than 100 KB consumes multiple message units. For example, a 250 KB message consumes 3 message units.
+
+## Viewing Usage Data
+
+### US and EU Cloud
+
+<Steps>
+  <Step title="Navigate to MQ Subscription">
+    Go to **Access Management** > **MQ Subscription** in Anypoint Platform.
+  </Step>
+  <Step title="Review Usage Charts">
+    View the usage charts that display API request consumption for the **current month** and **previous month**.
+  </Step>
+  <Step title="Monitor Limit Indicators">
+    The chart colors shift from green to yellow to red as usage approaches subscription limits.
+  </Step>
+</Steps>
+
+<Warning>
+Usage data is delayed by up to **24 hours**. The numbers displayed may not reflect the most recent API activity.
+</Warning>
+
+### Canada and Japan Cloud
+
+<Steps>
+  <Step title="Open Usage Section">
+    Navigate to the **Usage** section in Anypoint Platform.
+  </Step>
+  <Step title="Select Anypoint MQ">
+    From the product dropdown, select **Anypoint MQ** to view MQ-specific usage data.
+  </Step>
+  <Step title="View Reports">
+    Browse **monthly** and **daily** usage reports. Use the date selectors to navigate between reporting periods.
+  </Step>
+  <Step title="Export Data">
+    Click the **CSV export** option to download usage data for offline analysis or record-keeping.
+  </Step>
+</Steps>
+
+## Exceeding Subscription Limits
+
+<Info>
+If your usage exceeds subscription limits, Anypoint MQ **continues to operate** without interruption. Your organization administrators receive billing notifications from MuleSoft to address the overage.
+</Info>
+
+## Failover Impact on Usage
+
+<Warning>
+If cross-region failover is configured, periodic health-check calls to the primary and fallback regions consume additional API requests. Factor this into your usage estimates when enabling failover on queues.
+</Warning>

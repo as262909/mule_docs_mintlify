@@ -1,0 +1,72 @@
+---
+title: "Access Management"
+description: "Set up environments and manage user permissions for Anypoint MQ"
+---
+
+## Prerequisites
+
+Before configuring access management for Anypoint MQ, ensure you have the following in place:
+
+<Steps>
+  <Step title="Create an Environment">
+    Set up at least one environment (such as Production, Sandbox, or Design) in Access Management where Anypoint MQ will operate.
+  </Step>
+  <Step title="Obtain Necessary Permissions">
+    Ensure your user account has the **Organization Administrator** or **MQ Admin** role to assign permissions to other users.
+  </Step>
+</Steps>
+
+<Note>
+Anypoint MQ permissions are environment-specific. You must assign permissions separately for each environment where a user needs access.
+</Note>
+
+## Permissions
+
+Anypoint MQ provides granular role-based permissions to control what users can do within each environment.
+
+| Permission | Description |
+|---|---|
+| **View clients** | View all client app details within the environment. |
+| **Manage clients** | Create, edit, and delete client apps within the environment. |
+| **Administer destinations** | Create, edit, and purge queues, exchanges, and routing rules within the environment. |
+| **Manage destinations** | <Warning>**Deprecated.** Use *Administer destinations* instead.</Warning> Legacy permission for managing queues and exchanges. |
+| **Destination subscriber** | Consume messages from and delete messages in queues within the environment. |
+| **Destination publisher** | Send messages to queues and exchanges, and update the TTL (time-to-live) for messages. |
+| **Read MQ stats** | View dashboard statistics, including queue metrics and usage data, within the environment. |
+
+<Tip>
+Follow the **principle of least privilege** when assigning permissions. For example, a monitoring service only needs **Read MQ stats**, while a publishing application needs **Destination publisher**.
+</Tip>
+
+## Switching Environments
+
+Anypoint MQ operates within a specific environment context. You can switch between environments to manage queues, exchanges, and permissions for each one.
+
+<Steps>
+  <Step title="Open Anypoint MQ">
+    Navigate to **MQ** in the left navigation panel of Anypoint Platform.
+  </Step>
+  <Step title="Click the Environment Button">
+    Click the environment button displayed at the top of the MQ page (it shows the name of the currently selected environment).
+  </Step>
+  <Step title="Select a Different Environment">
+    Choose the target environment from the dropdown list. The MQ console refreshes to show the destinations and settings for the selected environment.
+  </Step>
+</Steps>
+
+## Changing the Default Environment
+
+You can set a default environment so that Anypoint MQ opens to your preferred environment each time.
+
+<Steps>
+  <Step title="Open Profile Settings">
+    Click your username or profile icon in the top-right corner of Anypoint Platform and select **Profile**.
+  </Step>
+  <Step title="Set Default Environment">
+    In the **Preferences** section, select your preferred default environment from the dropdown and save.
+  </Step>
+</Steps>
+
+<Info>
+The default environment setting applies to your user profile across the platform. Other users can configure their own defaults independently.
+</Info>

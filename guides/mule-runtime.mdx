@@ -1,0 +1,33 @@
+---
+title: "Mule Runtime"
+description: "Learn about the Mule runtime engine that powers your integrations"
+---
+
+## Overview
+
+Mule runtime engine is the lightweight, Java-based integration engine that processes messages through your Mule applications. It is the core of the Anypoint Platform, responsible for executing your integration logic.
+
+## Key Capabilities
+
+- **Message processing** - Route, transform, and enrich messages between systems
+- **Connectivity** - Use connectors to integrate with hundreds of systems and protocols
+- **Error handling** - Built-in error handling with try/catch scopes and error types
+- **Transactions** - Support for transactional processing across multiple systems
+- **Clustering** - Deploy in clusters for high availability and load balancing
+
+## Deployment Options
+
+| Option | Description |
+|--------|-------------|
+| **CloudHub** | MuleSoft-hosted cloud runtime |
+| **Runtime Fabric** | Self-hosted on Kubernetes |
+| **On-Premises** | Standalone Mule runtime on your servers |
+| **Anypoint Studio** | Embedded runtime for local development and testing |
+
+## Architecture
+
+Mule applications consist of **flows** that define how messages are processed:
+
+- **Source** - Triggers the flow (e.g., HTTP Listener, Scheduler)
+- **Processors** - Transform, route, or enrich the message
+- **Error Handler** - Catches and handles errors in the flow

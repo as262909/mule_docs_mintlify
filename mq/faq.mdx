@@ -1,0 +1,123 @@
+---
+title: "FAQ"
+description: "Frequently asked questions about Anypoint MQ"
+---
+
+## Subscription and Availability
+
+<AccordionGroup>
+  <Accordion title="How do I get access to Anypoint MQ?">
+    Anypoint MQ is an **add-on to a paid Anypoint Platform subscription**. It is not included in the free trial. Contact your MuleSoft account team to add Anypoint MQ to your subscription.
+  </Accordion>
+  <Accordion title="How long does it take to activate Anypoint MQ?">
+    After your subscription is processed, Anypoint MQ is typically activated within **1 hour**. You will see the MQ option appear in the left navigation menu of Anypoint Platform once activation is complete.
+  </Accordion>
+  <Accordion title="Which regions is Anypoint MQ available in?">
+    Anypoint MQ is available across multiple cloud regions:
+
+    | Cloud | Regions |
+    |---|---|
+    | **US Cloud** | US East (N. Virginia), US East (Ohio), US West (Oregon), Canada (Central) |
+    | **EU Cloud** | EU (Frankfurt), EU (Ireland) |
+    | **Other** | MuleSoft Government Cloud, Canada Cloud, Japan Cloud |
+  </Accordion>
+</AccordionGroup>
+
+## Security and Encryption
+
+<AccordionGroup>
+  <Accordion title="How does Anypoint MQ secure messages in transit?">
+    All communication with Anypoint MQ uses **HTTPS with TLS 1.2**. This applies to the MQ connector, REST APIs, and the Anypoint Platform console.
+  </Accordion>
+  <Accordion title="Does Anypoint MQ encrypt messages at rest?">
+    Encryption at rest is **optional** and can be enabled per queue. When enabled, messages are encrypted using **AES-256 GCM**.
+
+    <Warning>
+    Encryption at rest applies to the **message body only**. Message headers and properties are **not encrypted**. Do not store sensitive data in message headers or properties.
+    </Warning>
+  </Accordion>
+</AccordionGroup>
+
+## Messages and Queues
+
+<AccordionGroup>
+  <Accordion title="What is the maximum message size?">
+    The maximum message size is **10 MB**. Messages exceeding this limit are rejected by the API.
+  </Accordion>
+  <Accordion title="How many messages can be in-flight at once?">
+    - **Standard queues**: Up to **120,000** in-flight messages.
+    - **FIFO queues**: Up to **10 in-flight messages per message group**.
+  </Accordion>
+  <Accordion title="Are messages delivered in order?">
+    - **Standard queues**: No order guarantee. Messages may be delivered in any order.
+    - **FIFO queues**: Messages within the same message group are delivered in **strict first-in, first-out order**.
+  </Accordion>
+  <Accordion title="What is the maximum batch size?">
+    A single API call can send or receive up to **10 messages** in a batch.
+  </Accordion>
+  <Accordion title="How long are messages retained?">
+    Messages are retained for up to **2 weeks** (14 days). You can configure a shorter TTL (time-to-live) per queue or per message.
+  </Accordion>
+</AccordionGroup>
+
+## Performance and Throughput
+
+<AccordionGroup>
+  <Accordion title="What is the throughput limit for standard queues?">
+    Standard queues have **no maximum TPS (transactions per second) limit**. Throughput scales with the number of concurrent consumers.
+  </Accordion>
+  <Accordion title="What is the throughput limit for FIFO queues?">
+    FIFO queues support up to **300 TPS** per queue. With batching (up to 10 messages per request), effective throughput can reach **3,000 messages per second**.
+  </Accordion>
+</AccordionGroup>
+
+## Delivery Guarantees
+
+<AccordionGroup>
+  <Accordion title="What delivery guarantee does Anypoint MQ provide?">
+    - **Standard queues**: **At-least-once delivery**. A message may be delivered more than once in rare cases. Design your consumers to handle duplicate messages.
+    - **FIFO queues**: Support **exactly-once delivery** with automatic deduplication. Duplicate messages sent within the deduplication interval are discarded.
+  </Accordion>
+</AccordionGroup>
+
+## High Availability
+
+<AccordionGroup>
+  <Accordion title="Is Anypoint MQ highly available?">
+    Yes. Anypoint MQ is deployed across **multiple Availability Zones (multi-AZ)** within each region for high availability. Messages are retained during outages and become available when the service recovers.
+  </Accordion>
+  <Accordion title="Does Anypoint MQ support cross-region failover?">
+    Yes, for **standard queues only**. Cross-region failover can be enabled per queue to automatically switch to a fallback queue in a backup region when the primary region is unreachable. See the [Cross-Region Failover](/mq/failover) documentation for details.
+  </Accordion>
+</AccordionGroup>
+
+## API and Integration
+
+<AccordionGroup>
+  <Accordion title="How are API requests counted for billing?">
+    Every API call counts as **one billable request**, regardless of the number of messages returned. A batch receive returning up to 10 messages counts as a single request.
+  </Accordion>
+  <Accordion title="Can I use Anypoint MQ from non-Mule applications?">
+    Yes. Use the Anypoint MQ **REST APIs** (Admin, Broker, and Stats) to integrate with any application that can make HTTP requests. See the [REST APIs](/mq/apis) documentation for details.
+  </Accordion>
+  <Accordion title="Does Anypoint MQ support batch operations?">
+    Yes. The **Broker API** supports batch publish and batch consume of up to 10 messages per request.
+  </Accordion>
+</AccordionGroup>
+
+## Known Limitations
+
+<AccordionGroup>
+  <Accordion title="Can I configure retry strategies with the MQ connector?">
+    No. The Anypoint MQ connector does **not support Mule retry strategies** (such as `reconnect` or `reconnect-forever`). Implement retry logic at the application level if needed.
+  </Accordion>
+  <Accordion title="Is there a built-in way to replay messages from a dead letter queue?">
+    No. There is **no built-in DLQ replay mechanism**. To reprocess DLQ messages, you must consume them from the DLQ and republish them to the original queue programmatically.
+  </Accordion>
+  <Accordion title="Can I share messages across regions?">
+    No. There is **no cross-region message sharing or replication**. Each queue exists in a single region. Cross-region failover creates a separate fallback queue but does not replicate messages.
+  </Accordion>
+  <Accordion title="Can I deploy Anypoint MQ on premises?">
+    No. Anypoint MQ is a **cloud-only service**. There is no on-premises deployment option.
+  </Accordion>
+</AccordionGroup>

@@ -1,0 +1,115 @@
+---
+title: "Glossary"
+description: "Key terms and definitions for Anypoint MQ"
+---
+
+## A
+
+**ACK (Acknowledge)**
+A signal sent by a consumer to confirm that a message has been successfully processed. An acknowledged message is permanently deleted from the queue.
+
+**NACK (Negative Acknowledge)**
+A signal sent by a consumer to indicate that a message was not successfully processed. The message is released back to the queue and becomes available for redelivery.
+
+## B
+
+**Binding**
+A relationship that connects a queue to a message exchange. When a message is published to an exchange, it is routed to all queues bound to that exchange.
+
+## D
+
+**Dead Letter Queue (DLQ)**
+A special queue that receives messages that have been unsuccessfully consumed a specified number of times. DLQ messages do not incur additional API request charges.
+
+**Default Acknowledgement Timeout**
+The maximum time a consumer has to acknowledge a message after receiving it. If the timeout expires without an ACK or NACK, the message is automatically returned to the queue.
+
+**Delay Queue**
+A queue configured with a delivery delay between **0 and 15 minutes**. Messages sent to a delay queue are not visible to consumers until the delay period has elapsed.
+
+**Delayed Message Delivery**
+The mechanism by which messages in a delay queue are held for a configured period before becoming available for consumption.
+
+**Destination**
+A general term for any endpoint that can send or receive messages in Anypoint MQ. Destinations include queues and message exchanges.
+
+**Durable Message**
+A message that is persisted to disk and survives system restarts and outages. All messages in Anypoint MQ are durable by default.
+
+**Duration (TTL)**
+The maximum time a message remains in a queue before it expires and is automatically deleted. Configurable up to **2 weeks** (14 days).
+
+## E
+
+**Encrypted Queue**
+A queue with encryption at rest enabled. Messages are encrypted using **AES-256 GCM**. Encryption applies to the message body only, not headers or properties.
+
+## F
+
+**Failover**
+The automatic process of redirecting message operations from a primary region to a backup region when the primary region becomes unavailable. See [Cross-Region Failover](/mq/failover).
+
+**Fallback Queue**
+A queue created automatically in the backup region when cross-region failover is enabled. Named with a `_fb` suffix (e.g., `my-queue_fb`).
+
+**Fallback Region**
+The backup region designated to handle message operations when the primary region is unavailable. Each primary region has a fixed fallback region mapping.
+
+**FIFO Queue (First-In, First-Out)**
+A queue type that guarantees strict message ordering within each message group and supports exactly-once delivery. FIFO queues support up to 300 TPS (3,000 with batching).
+
+## I
+
+**In-Flight Messages**
+Messages that have been received by a consumer but not yet acknowledged or returned to the queue. Limits: **120,000** for standard queues, **10 per message group** for FIFO queues.
+
+**In Queue Messages**
+Messages that are waiting in the queue and have not yet been consumed. There is **no limit** on the number of in-queue messages.
+
+## L
+
+**Lock ID**
+A unique identifier assigned to a message when it is retrieved by a consumer. The lock ID is required to acknowledge (ACK) or negatively acknowledge (NACK) the message.
+
+## M
+
+**Message**
+The fundamental unit of data in Anypoint MQ. A message consists of a payload (body), headers, and optional properties. Maximum size is **10 MB**.
+
+**Message Exchange**
+A pub/sub routing mechanism that distributes messages to one or more bound queues. Publishers send messages to the exchange, and the exchange delivers copies to all bound queues.
+
+**Message Groups**
+A FIFO queue feature that allows independent ordering of messages within named groups. Messages within the same group are delivered in order; different groups are processed in parallel.
+
+**Message-Routing Rules**
+Configurable rules that determine how messages are routed from an exchange to bound queues based on message properties. Managed through the Admin API.
+
+## P
+
+**Payload**
+The body of a message. Supports **text**, **JSON**, and **CSV** formats. The payload is the data that is encrypted when using an encrypted queue.
+
+**Point-to-Point**
+A messaging pattern in which a message is delivered to exactly one consumer from a queue. Standard and FIFO queues both follow the point-to-point pattern.
+
+**Pub/Sub (Publish/Subscribe)**
+A messaging pattern in which a message published to an exchange is delivered to all queues bound to that exchange. Each bound queue receives its own copy of the message.
+
+**Publisher**
+An application or service that sends messages to a queue or message exchange.
+
+## Q
+
+**Queue**
+An ordered collection of messages that supports point-to-point message delivery. Consumers retrieve messages from queues. Available as standard or FIFO types.
+
+## S
+
+**Subscriber**
+An application or service that consumes messages from a queue. In a pub/sub pattern, each bound queue acts as a subscriber to the exchange.
+
+## T
+
+**TTL (Time-to-Live)**
+The duration a message is retained in a queue before it expires and is automatically deleted. Configurable per queue and overridable per message. Maximum value: **2 weeks** (14 days).
