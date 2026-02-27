@@ -1,36 +1,115 @@
 ---
 title: "API Reference"
-description: "Anypoint MQ REST API documentation"
+description: "Anypoint Platform REST API documentation"
 ---
 
 ## Overview
 
-Anypoint MQ provides three REST APIs for programmatic access to messaging capabilities.
+The Anypoint Platform exposes a comprehensive set of REST APIs that let you programmatically manage every aspect of your integration landscape. Use these APIs to automate provisioning, enforce governance, and build custom tooling on top of MuleSoft.
 
-<CardGroup cols={3}>
-  <Card title="Admin API" icon="gear">
-    Manage queues, exchanges, and client applications.
+<CardGroup cols={2}>
+  <Card title="API Platform API" icon="layer-group" href="/api-reference/api-platform">
+    Manage APIs, versions, portals, and client applications. Version 2.x (Extended Support).
   </Card>
-  <Card title="Broker API" icon="envelope">
-    Publish, consume, acknowledge, and reject messages.
+  <Card title="API Manager API" icon="sliders" href="/api-reference/api-manager">
+    Create and manage API instances, apply policies, configure SLA tiers, and set up alerts.
   </Card>
-  <Card title="Stats API" icon="chart-bar">
-    Retrieve queue statistics and usage metrics.
+  <Card title="Runtime Manager API" icon="server" href="/api-reference/runtime-manager">
+    Manage on-premises servers, clusters, server groups, and application deployments.
+  </Card>
+  <Card title="Exchange API" icon="store" href="https://anypoint.mulesoft.com/exchange/portals/anypoint-platform/">
+    Publish and discover assets, manage portal content, and search the Exchange catalog.
+  </Card>
+  <Card title="Anypoint MQ Admin API" icon="gear" href="/mq/apis">
+    Manage queues, exchanges, and client applications for Anypoint MQ.
+  </Card>
+  <Card title="Anypoint MQ Broker API" icon="envelope" href="/mq/apis">
+    Publish, consume, acknowledge, and reject messages from Anypoint MQ queues.
   </Card>
 </CardGroup>
 
+---
+
 ## Authentication
 
-All API requests require a bearer token. See the [REST APIs guide](/mq/apis) for authentication details.
+Every API request to the Anypoint Platform requires a valid bearer token in the `Authorization` header. There are two primary ways to obtain a token.
 
-## Base URLs
+### Option 1 -- Username and Password
 
-| API | Base URL |
-|-----|----------|
-| Admin | `https://anypoint.mulesoft.com/mq/admin/api/v1` |
-| Broker | `https://mq-us-east-1.anypoint.mulesoft.com/api/v1` |
-| Stats | `https://anypoint.mulesoft.com/mq/stats/api/v1` |
+Use the `/accounts/login` endpoint to exchange your Anypoint Platform credentials for a bearer token.
+
+<Steps>
+  <Step title="Request a token">
+    ```bash
+    curl -X POST https://anypoint.mulesoft.com/accounts/login \
+      -H "Content-Type: application/json" \
+      -d '{
+        "username": "your-username",
+        "password": "your-password"
+      }'
+    ```
+  </Step>
+  <Step title="Extract the access_token from the response">
+    ```json
+    {
+      "access_token": "e5d7f8a0-b345-4c12-9a0f-1234abcd5678",
+      "token_type": "bearer"
+    }
+    ```
+  </Step>
+  <Step title="Use the token in subsequent requests">
+    ```bash
+    curl https://anypoint.mulesoft.com/apiplatform/repository/v2/organizations/{orgId}/apis \
+      -H "Authorization: Bearer e5d7f8a0-b345-4c12-9a0f-1234abcd5678"
+    ```
+  </Step>
+</Steps>
+
+### Option 2 -- Connected Apps (Client Credentials)
+
+For automated pipelines and service-to-service integrations, use a Connected App configured with the **client_credentials** grant type.
+
+```bash
+curl -X POST https://anypoint.mulesoft.com/accounts/api/v2/oauth2/token \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "client_id=YOUR_CLIENT_ID" \
+  -d "client_secret=YOUR_CLIENT_SECRET" \
+  -d "grant_type=client_credentials"
+```
+
+**Response:**
+
+```json
+{
+  "access_token": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "token_type": "bearer",
+  "expires_in": 3600
+}
+```
+
+<Tip>
+  Connected Apps tokens are scoped. Make sure the Connected App has the required scopes for the APIs you intend to call (e.g., **API Manager**, **Runtime Manager**, **Exchange**).
+</Tip>
+
+### Using the Bearer Token
+
+Include the token in the `Authorization` header of every API request:
+
+```
+Authorization: Bearer {access_token}
+```
 
 <Note>
-  Broker API base URLs vary by region. Replace `us-east-1` with your deployment region.
+  **Federated authentication:** If your organization uses an external identity provider (SSO), you cannot use the `/accounts/login` endpoint directly. Instead, authenticate through your IdP and exchange the resulting SAML assertion for an Anypoint token via `POST /accounts/api/v2/auth/exchangeToken`. Refer to the [Anypoint Access Management documentation](https://docs.mulesoft.com/access-management/) for details.
 </Note>
+
+### Token Lifetime
+
+| Method | Default Expiry | Refresh |
+|--------|---------------|---------|
+| Username / password | 60 minutes | Re-authenticate with `/accounts/login` |
+| Connected App (client_credentials) | 60 minutes | Request a new token with the same client credentials |
+
+<Warning>
+  Never embed credentials or tokens in source code repositories. Use environment variables or a secrets manager in CI/CD pipelines.
+</Warning>

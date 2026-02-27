@@ -84,7 +84,12 @@
         "groups": [
           {
             "group": "API Reference",
-            "pages": ["api-reference/introduction"]
+            "pages": [
+              "api-reference/introduction",
+              "api-reference/api-platform",
+              "api-reference/api-manager",
+              "api-reference/runtime-manager"
+            ]
           }
         ]
       }

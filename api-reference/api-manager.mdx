@@ -1,0 +1,449 @@
+---
+title: "API Manager API"
+description: "Manage API instances, policies, SLAs, and alerts"
+---
+
+## Base URL
+
+```
+https://anypoint.mulesoft.com/apimanager/api/v1
+```
+
+## Authentication
+
+The API Manager API supports both Connected Apps (OAuth 2.0 `client_credentials`) and user bearer tokens.
+
+<Steps>
+  <Step title="Create a Connected App">
+    In **Access Management > Connected Apps**, create an app with the **client_credentials** grant type. Assign the **API Manager** scope for each environment you need to manage.
+  </Step>
+  <Step title="Request an access token">
+    ```bash
+    curl -X POST https://anypoint.mulesoft.com/accounts/api/v2/oauth2/token \
+      -H "Content-Type: application/x-www-form-urlencoded" \
+      -d "client_id=YOUR_CLIENT_ID" \
+      -d "client_secret=YOUR_CLIENT_SECRET" \
+      -d "grant_type=client_credentials"
+    ```
+  </Step>
+  <Step title="Include the token in every request">
+    ```
+    Authorization: Bearer {access_token}
+    ```
+  </Step>
+</Steps>
+
+<Note>
+  **Required scopes:** The Connected App must have the **API Manager** scope assigned for the specific organization and environment you are targeting. Without the correct scope, requests return `401 Unauthorized`.
+</Note>
+
+---
+
+## API Instances
+
+### `POST` /organizations/{orgId}/environments/{envId}/apis
+
+Create a new API instance in the specified environment.
+
+<Accordion title="Parameters">
+  | Parameter | In | Type | Required | Description |
+  |---|---|---|---|---|
+  | `orgId` | path | string | Yes | The organization ID |
+  | `envId` | path | string | Yes | The environment ID |
+</Accordion>
+
+<Accordion title="Request body">
+  ```json
+  {
+    "spec": {
+      "groupId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+      "assetId": "order-api",
+      "version": "1.0.0"
+    },
+    "endpoint": {
+      "type": "raml",
+      "uri": "https://api.example.com/orders/v1",
+      "proxyUri": "https://proxy.example.com/orders/v1",
+      "isCloudHub": false,
+      "referencesUserDomain": false,
+      "responseTimeout": 15000
+    },
+    "technology": "mule4",
+    "instanceLabel": "orders-v1-production"
+  }
+  ```
+</Accordion>
+
+<Accordion title="Request body fields">
+  | Field | Type | Required | Description |
+  |---|---|---|---|
+  | `spec.groupId` | string | Yes | The Exchange asset group ID (usually the org ID) |
+  | `spec.assetId` | string | Yes | The Exchange asset ID |
+  | `spec.version` | string | Yes | The asset version (e.g., `1.0.0`) |
+  | `endpoint.type` | string | No | Specification type: `raml`, `http`, `wsdl` |
+  | `endpoint.uri` | string | Yes | The implementation URI (your backend) |
+  | `endpoint.proxyUri` | string | No | The consumer-facing proxy URI |
+  | `endpoint.isCloudHub` | boolean | No | `true` if deploying the proxy to CloudHub |
+  | `endpoint.referencesUserDomain` | boolean | No | `true` if the proxy uses a custom VPCE or VPC domain |
+  | `endpoint.responseTimeout` | integer | No | Timeout in milliseconds for the backend response |
+  | `technology` | string | No | Runtime technology: `mule4`, `mule3`, `flexGateway` |
+  | `instanceLabel` | string | No | Human-readable label for the instance |
+</Accordion>
+
+<Accordion title="Example request">
+  ```bash
+  curl -X POST "https://anypoint.mulesoft.com/apimanager/api/v1/organizations/{orgId}/environments/{envId}/apis" \
+    -H "Authorization: Bearer {access_token}" \
+    -H "Content-Type: application/json" \
+    -d '{
+      "spec": {
+        "groupId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+        "assetId": "order-api",
+        "version": "1.0.0"
+      },
+      "endpoint": {
+        "type": "raml",
+        "uri": "https://api.example.com/orders/v1",
+        "proxyUri": "https://proxy.example.com/orders/v1",
+        "isCloudHub": false,
+        "referencesUserDomain": false,
+        "responseTimeout": 15000
+      },
+      "technology": "mule4",
+      "instanceLabel": "orders-v1-production"
+    }'
+  ```
+</Accordion>
+
+<Accordion title="Example response">
+  ```json
+  {
+    "id": 19874532,
+    "instanceLabel": "orders-v1-production",
+    "technology": "mule4",
+    "assetId": "order-api",
+    "assetVersion": "1.0.0",
+    "productVersion": "v1",
+    "environmentId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+    "endpoint": {
+      "type": "raml",
+      "uri": "https://api.example.com/orders/v1",
+      "proxyUri": "https://proxy.example.com/orders/v1"
+    },
+    "status": "unregistered"
+  }
+  ```
+</Accordion>
+
+---
+
+### `GET` /organizations/{orgId}/environments/{envId}/apis
+
+List all API instances in the specified environment.
+
+<Accordion title="Parameters">
+  | Parameter | In | Type | Required | Description |
+  |---|---|---|---|---|
+  | `orgId` | path | string | Yes | The organization ID |
+  | `envId` | path | string | Yes | The environment ID |
+  | `query` | query | string | No | Filter instances by name or label |
+  | `offset` | query | integer | No | Pagination offset |
+  | `limit` | query | integer | No | Maximum results to return |
+</Accordion>
+
+<Accordion title="Example request">
+  ```bash
+  curl -X GET "https://anypoint.mulesoft.com/apimanager/api/v1/organizations/{orgId}/environments/{envId}/apis?limit=25" \
+    -H "Authorization: Bearer {access_token}"
+  ```
+</Accordion>
+
+<Accordion title="Example response">
+  ```json
+  {
+    "assets": [
+      {
+        "id": 19874532,
+        "instanceLabel": "orders-v1-production",
+        "assetId": "order-api",
+        "assetVersion": "1.0.0",
+        "technology": "mule4",
+        "status": "active"
+      }
+    ],
+    "total": 1
+  }
+  ```
+</Accordion>
+
+---
+
+### `GET` /organizations/{orgId}/environments/{envId}/apis/{instanceId}
+
+Retrieve the details of a specific API instance.
+
+<Accordion title="Parameters">
+  | Parameter | In | Type | Required | Description |
+  |---|---|---|---|---|
+  | `orgId` | path | string | Yes | The organization ID |
+  | `envId` | path | string | Yes | The environment ID |
+  | `instanceId` | path | integer | Yes | The API instance ID |
+</Accordion>
+
+<Accordion title="Example request">
+  ```bash
+  curl -X GET "https://anypoint.mulesoft.com/apimanager/api/v1/organizations/{orgId}/environments/{envId}/apis/{instanceId}" \
+    -H "Authorization: Bearer {access_token}"
+  ```
+</Accordion>
+
+---
+
+### `DELETE` /organizations/{orgId}/environments/{envId}/apis/{instanceId}
+
+Delete an API instance from the environment.
+
+<Accordion title="Parameters">
+  | Parameter | In | Type | Required | Description |
+  |---|---|---|---|---|
+  | `orgId` | path | string | Yes | The organization ID |
+  | `envId` | path | string | Yes | The environment ID |
+  | `instanceId` | path | integer | Yes | The API instance ID to delete |
+</Accordion>
+
+<Accordion title="Example request">
+  ```bash
+  curl -X DELETE "https://anypoint.mulesoft.com/apimanager/api/v1/organizations/{orgId}/environments/{envId}/apis/{instanceId}" \
+    -H "Authorization: Bearer {access_token}"
+  ```
+</Accordion>
+
+<Warning>
+  Deleting an API instance removes all associated policies, SLA tiers, and contracts. This action cannot be undone.
+</Warning>
+
+---
+
+## Deployments
+
+### `POST` /proxies/xapi/v1/organizations/{orgId}/environments/{envId}/apis/{instanceId}/deployments
+
+Deploy an API proxy for the specified API instance.
+
+<Accordion title="Parameters">
+  | Parameter | In | Type | Required | Description |
+  |---|---|---|---|---|
+  | `orgId` | path | string | Yes | The organization ID |
+  | `envId` | path | string | Yes | The environment ID |
+  | `instanceId` | path | integer | Yes | The API instance ID |
+</Accordion>
+
+<Accordion title="Request body">
+  ```json
+  {
+    "type": "HY",
+    "gatewayVersion": "4.4.0",
+    "targetId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+    "environmentId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+  }
+  ```
+</Accordion>
+
+<Accordion title="Request body fields">
+  | Field | Type | Required | Description |
+  |---|---|---|---|
+  | `type` | string | Yes | Deployment type. `HY` for hybrid (on-premises), `CH` for CloudHub |
+  | `gatewayVersion` | string | Yes | Mule runtime gateway version (e.g., `4.4.0`) |
+  | `targetId` | string | Yes | The target server, cluster, or server group ID |
+  | `environmentId` | string | Yes | The environment ID for the deployment target |
+</Accordion>
+
+<Accordion title="Example request">
+  ```bash
+  curl -X POST "https://anypoint.mulesoft.com/proxies/xapi/v1/organizations/{orgId}/environments/{envId}/apis/{instanceId}/deployments" \
+    -H "Authorization: Bearer {access_token}" \
+    -H "Content-Type: application/json" \
+    -d '{
+      "type": "HY",
+      "gatewayVersion": "4.4.0",
+      "targetId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+      "environmentId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+    }'
+  ```
+</Accordion>
+
+<Tip>
+  After a successful deployment, the API instance status transitions from `unregistered` to `active`. Use the **GET instance** endpoint to poll the status.
+</Tip>
+
+---
+
+## Policies
+
+### `POST` /organizations/{orgId}/environments/{envId}/apis/{instanceId}/policies
+
+Apply a policy to an API instance.
+
+<Accordion title="Parameters">
+  | Parameter | In | Type | Required | Description |
+  |---|---|---|---|---|
+  | `orgId` | path | string | Yes | The organization ID |
+  | `envId` | path | string | Yes | The environment ID |
+  | `instanceId` | path | integer | Yes | The API instance ID |
+</Accordion>
+
+<Accordion title="Request body">
+  ```json
+  {
+    "configurationData": {
+      "rateLimits": [
+        {
+          "maximumRequests": 100,
+          "timePeriodInMilliseconds": 60000
+        }
+      ],
+      "clusterizable": true,
+      "exposeHeaders": false
+    },
+    "pointcutData": null,
+    "assetId": "rate-limiting",
+    "assetVersion": "1.4.0",
+    "groupId": "68ef9520-24e9-4cf2-b2f5-620025690913"
+  }
+  ```
+</Accordion>
+
+<Accordion title="Request body fields">
+  | Field | Type | Required | Description |
+  |---|---|---|---|
+  | `configurationData` | object | Yes | Policy-specific configuration (varies by policy type) |
+  | `pointcutData` | object/null | No | Resource-level policy application (null applies to all resources) |
+  | `assetId` | string | Yes | The Exchange asset ID of the policy (e.g., `rate-limiting`, `client-id-enforcement`) |
+  | `assetVersion` | string | Yes | The version of the policy asset |
+  | `groupId` | string | Yes | The group ID of the policy asset (MuleSoft policies use `68ef9520-24e9-4cf2-b2f5-620025690913`) |
+</Accordion>
+
+<Accordion title="Example request">
+  ```bash
+  curl -X POST "https://anypoint.mulesoft.com/apimanager/api/v1/organizations/{orgId}/environments/{envId}/apis/{instanceId}/policies" \
+    -H "Authorization: Bearer {access_token}" \
+    -H "Content-Type: application/json" \
+    -d '{
+      "configurationData": {
+        "rateLimits": [
+          {
+            "maximumRequests": 100,
+            "timePeriodInMilliseconds": 60000
+          }
+        ],
+        "clusterizable": true,
+        "exposeHeaders": false
+      },
+      "pointcutData": null,
+      "assetId": "rate-limiting",
+      "assetVersion": "1.4.0",
+      "groupId": "68ef9520-24e9-4cf2-b2f5-620025690913"
+    }'
+  ```
+</Accordion>
+
+<Accordion title="Example response">
+  ```json
+  {
+    "id": 55001,
+    "assetId": "rate-limiting",
+    "assetVersion": "1.4.0",
+    "configurationData": {
+      "rateLimits": [
+        {
+          "maximumRequests": 100,
+          "timePeriodInMilliseconds": 60000
+        }
+      ],
+      "clusterizable": true,
+      "exposeHeaders": false
+    },
+    "order": 1,
+    "disabled": false
+  }
+  ```
+</Accordion>
+
+---
+
+### `GET` /organizations/{orgId}/environments/{envId}/apis/{instanceId}/policies
+
+List all policies applied to an API instance.
+
+<Accordion title="Parameters">
+  | Parameter | In | Type | Required | Description |
+  |---|---|---|---|---|
+  | `orgId` | path | string | Yes | The organization ID |
+  | `envId` | path | string | Yes | The environment ID |
+  | `instanceId` | path | integer | Yes | The API instance ID |
+</Accordion>
+
+<Accordion title="Example request">
+  ```bash
+  curl -X GET "https://anypoint.mulesoft.com/apimanager/api/v1/organizations/{orgId}/environments/{envId}/apis/{instanceId}/policies" \
+    -H "Authorization: Bearer {access_token}"
+  ```
+</Accordion>
+
+<Accordion title="Example response">
+  ```json
+  {
+    "policies": [
+      {
+        "id": 55001,
+        "assetId": "rate-limiting",
+        "assetVersion": "1.4.0",
+        "order": 1,
+        "disabled": false,
+        "configurationData": {
+          "rateLimits": [
+            {
+              "maximumRequests": 100,
+              "timePeriodInMilliseconds": 60000
+            }
+          ]
+        }
+      },
+      {
+        "id": 55002,
+        "assetId": "client-id-enforcement",
+        "assetVersion": "1.3.0",
+        "order": 2,
+        "disabled": false,
+        "configurationData": {}
+      }
+    ]
+  }
+  ```
+</Accordion>
+
+---
+
+### `DELETE` /organizations/{orgId}/environments/{envId}/apis/{instanceId}/policies/{policyId}
+
+Remove a policy from an API instance.
+
+<Accordion title="Parameters">
+  | Parameter | In | Type | Required | Description |
+  |---|---|---|---|---|
+  | `orgId` | path | string | Yes | The organization ID |
+  | `envId` | path | string | Yes | The environment ID |
+  | `instanceId` | path | integer | Yes | The API instance ID |
+  | `policyId` | path | integer | Yes | The ID of the policy to remove |
+</Accordion>
+
+<Accordion title="Example request">
+  ```bash
+  curl -X DELETE "https://anypoint.mulesoft.com/apimanager/api/v1/organizations/{orgId}/environments/{envId}/apis/{instanceId}/policies/{policyId}" \
+    -H "Authorization: Bearer {access_token}"
+  ```
+</Accordion>
+
+<Note>
+  Removing a policy takes effect immediately. If the API proxy is running, the policy is unapplied on the next policy poll cycle (typically within seconds).
+</Note>

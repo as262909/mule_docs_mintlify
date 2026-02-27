@@ -1,0 +1,505 @@
+---
+title: "API Platform API"
+description: "Manage APIs, versions, portals, and applications"
+---
+
+## Base URL
+
+```
+https://anypoint.mulesoft.com/apiplatform/repository/v2
+```
+
+<Warning>
+  **Extended Support:** The API Platform API version 2.0.x is in Extended Support. MuleSoft recommends migrating to the [API Manager API](/api-reference/api-manager) for managing API instances, policies, and SLA tiers. Use the API Platform API only for legacy workflows that have not yet been transitioned.
+</Warning>
+
+<Note>
+  **Connected Apps restriction:** API Platform API endpoints do not support Connected Apps acting on their own behalf, with the exception of application-related endpoints (e.g., contracts). For all other operations, authenticate with a user-scoped bearer token.
+</Note>
+
+---
+
+## Organizations & APIs
+
+### `GET` /organizations/{organizationId}/apis
+
+List all APIs in the specified organization.
+
+<Accordion title="Parameters">
+  | Parameter | In | Type | Required | Description |
+  |---|---|---|---|---|
+  | `organizationId` | path | string | Yes | The ID of the organization |
+  | `query` | query | string | No | Search term to filter APIs by name |
+  | `limit` | query | integer | No | Maximum number of results to return (default 25) |
+  | `offset` | query | integer | No | Number of results to skip for pagination |
+  | `sort` | query | string | No | Sort field (e.g., `createdDate`, `name`) |
+</Accordion>
+
+<Accordion title="Example request">
+  ```bash
+  curl -X GET "https://anypoint.mulesoft.com/apiplatform/repository/v2/organizations/{organizationId}/apis?limit=10" \
+    -H "Authorization: Bearer {access_token}"
+  ```
+</Accordion>
+
+<Accordion title="Example response">
+  ```json
+  {
+    "apis": [
+      {
+        "audit": {
+          "created": { "date": "2024-03-15T10:30:00.000Z" },
+          "updated": { "date": "2024-06-01T14:22:00.000Z" }
+        },
+        "id": 12345,
+        "name": "Order API",
+        "description": "Manages customer orders",
+        "versions": [
+          {
+            "id": 67890,
+            "name": "v1",
+            "assetVersion": "1.0.0"
+          }
+        ],
+        "organizationId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+      }
+    ],
+    "total": 1
+  }
+  ```
+</Accordion>
+
+---
+
+### `POST` /organizations/{organizationId}/apis
+
+Create a new API definition in the organization.
+
+<Accordion title="Parameters">
+  | Parameter | In | Type | Required | Description |
+  |---|---|---|---|---|
+  | `organizationId` | path | string | Yes | The ID of the organization |
+</Accordion>
+
+<Accordion title="Request body">
+  ```json
+  {
+    "name": "Order API",
+    "description": "API for managing customer orders",
+    "version": {
+      "name": "v1",
+      "description": "Initial release"
+    }
+  }
+  ```
+</Accordion>
+
+<Accordion title="Example request">
+  ```bash
+  curl -X POST "https://anypoint.mulesoft.com/apiplatform/repository/v2/organizations/{organizationId}/apis" \
+    -H "Authorization: Bearer {access_token}" \
+    -H "Content-Type: application/json" \
+    -d '{
+      "name": "Order API",
+      "description": "API for managing customer orders",
+      "version": {
+        "name": "v1",
+        "description": "Initial release"
+      }
+    }'
+  ```
+</Accordion>
+
+<Accordion title="Example response">
+  ```json
+  {
+    "id": 12345,
+    "name": "Order API",
+    "description": "API for managing customer orders",
+    "versions": [
+      {
+        "id": 67890,
+        "name": "v1"
+      }
+    ],
+    "organizationId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+  }
+  ```
+</Accordion>
+
+---
+
+### `GET` /organizations/{organizationId}/apis/{apiId}
+
+Retrieve the details of a specific API.
+
+<Accordion title="Parameters">
+  | Parameter | In | Type | Required | Description |
+  |---|---|---|---|---|
+  | `organizationId` | path | string | Yes | The ID of the organization |
+  | `apiId` | path | integer | Yes | The ID of the API |
+</Accordion>
+
+<Accordion title="Example request">
+  ```bash
+  curl -X GET "https://anypoint.mulesoft.com/apiplatform/repository/v2/organizations/{organizationId}/apis/{apiId}" \
+    -H "Authorization: Bearer {access_token}"
+  ```
+</Accordion>
+
+<Accordion title="Example response">
+  ```json
+  {
+    "id": 12345,
+    "name": "Order API",
+    "description": "API for managing customer orders",
+    "groupId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+    "assetId": "order-api",
+    "versions": [
+      {
+        "id": 67890,
+        "name": "v1",
+        "assetVersion": "1.0.0"
+      }
+    ],
+    "organizationId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+  }
+  ```
+</Accordion>
+
+---
+
+### `PATCH` /organizations/{organizationId}/apis/{apiId}
+
+Update an API definition. Use this endpoint to link an API to an Exchange asset by providing the `groupId` and `assetId`.
+
+<Accordion title="Parameters">
+  | Parameter | In | Type | Required | Description |
+  |---|---|---|---|---|
+  | `organizationId` | path | string | Yes | The ID of the organization |
+  | `apiId` | path | integer | Yes | The ID of the API to update |
+</Accordion>
+
+<Accordion title="Request body">
+  ```json
+  {
+    "name": "Order API",
+    "description": "Updated description",
+    "groupId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+    "assetId": "order-api"
+  }
+  ```
+</Accordion>
+
+<Accordion title="Example request">
+  ```bash
+  curl -X PATCH "https://anypoint.mulesoft.com/apiplatform/repository/v2/organizations/{organizationId}/apis/{apiId}" \
+    -H "Authorization: Bearer {access_token}" \
+    -H "Content-Type: application/json" \
+    -d '{
+      "groupId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+      "assetId": "order-api"
+    }'
+  ```
+</Accordion>
+
+<Tip>
+  Linking an API to an Exchange asset (via `groupId` and `assetId`) enables API Manager to resolve the RAML or OAS specification directly from Exchange.
+</Tip>
+
+---
+
+### `DELETE` /organizations/{organizationId}/apis/{apiId}
+
+Delete an unclassified API from the organization.
+
+<Accordion title="Parameters">
+  | Parameter | In | Type | Required | Description |
+  |---|---|---|---|---|
+  | `organizationId` | path | string | Yes | The ID of the organization |
+  | `apiId` | path | integer | Yes | The ID of the API to delete |
+</Accordion>
+
+<Accordion title="Example request">
+  ```bash
+  curl -X DELETE "https://anypoint.mulesoft.com/apiplatform/repository/v2/organizations/{organizationId}/apis/{apiId}" \
+    -H "Authorization: Bearer {access_token}"
+  ```
+</Accordion>
+
+<Warning>
+  You can only delete APIs that have **not** been classified into an environment. To remove a classified API, first remove the environment classification, then delete.
+</Warning>
+
+---
+
+## API Versions
+
+### `GET` /organizations/{organizationId}/apis/{apiId}/versions
+
+List all versions of a specific API.
+
+<Accordion title="Parameters">
+  | Parameter | In | Type | Required | Description |
+  |---|---|---|---|---|
+  | `organizationId` | path | string | Yes | The ID of the organization |
+  | `apiId` | path | integer | Yes | The ID of the API |
+</Accordion>
+
+<Accordion title="Example request">
+  ```bash
+  curl -X GET "https://anypoint.mulesoft.com/apiplatform/repository/v2/organizations/{organizationId}/apis/{apiId}/versions" \
+    -H "Authorization: Bearer {access_token}"
+  ```
+</Accordion>
+
+<Accordion title="Example response">
+  ```json
+  {
+    "versions": [
+      {
+        "id": 67890,
+        "name": "v1",
+        "assetVersion": "1.0.0",
+        "productVersion": "v1",
+        "description": "Initial release"
+      },
+      {
+        "id": 67891,
+        "name": "v2",
+        "assetVersion": "2.0.0",
+        "productVersion": "v2",
+        "description": "Added bulk operations"
+      }
+    ],
+    "total": 2
+  }
+  ```
+</Accordion>
+
+---
+
+### `GET` /organizations/{organizationId}/apis/{apiId}/versions/{apiVersionId}
+
+Retrieve the details of a specific API version.
+
+<Accordion title="Parameters">
+  | Parameter | In | Type | Required | Description |
+  |---|---|---|---|---|
+  | `organizationId` | path | string | Yes | The ID of the organization |
+  | `apiId` | path | integer | Yes | The ID of the API |
+  | `apiVersionId` | path | integer | Yes | The ID of the API version |
+</Accordion>
+
+<Accordion title="Example request">
+  ```bash
+  curl -X GET "https://anypoint.mulesoft.com/apiplatform/repository/v2/organizations/{organizationId}/apis/{apiId}/versions/{apiVersionId}" \
+    -H "Authorization: Bearer {access_token}"
+  ```
+</Accordion>
+
+<Accordion title="Example response">
+  ```json
+  {
+    "id": 67890,
+    "name": "v1",
+    "assetVersion": "1.0.0",
+    "productVersion": "v1",
+    "description": "Initial release",
+    "endpointUri": "https://api.example.com/orders/v1",
+    "tags": ["production", "orders"]
+  }
+  ```
+</Accordion>
+
+---
+
+### `PATCH` /organizations/{organizationId}/apis/{apiId}/versions/{apiVersionId}
+
+Update a specific API version. Commonly used to change the `assetVersion` that the version points to.
+
+<Accordion title="Parameters">
+  | Parameter | In | Type | Required | Description |
+  |---|---|---|---|---|
+  | `organizationId` | path | string | Yes | The ID of the organization |
+  | `apiId` | path | integer | Yes | The ID of the API |
+  | `apiVersionId` | path | integer | Yes | The ID of the API version |
+</Accordion>
+
+<Accordion title="Request body">
+  ```json
+  {
+    "assetVersion": "1.1.0",
+    "description": "Patched release with bug fixes"
+  }
+  ```
+</Accordion>
+
+<Accordion title="Example request">
+  ```bash
+  curl -X PATCH "https://anypoint.mulesoft.com/apiplatform/repository/v2/organizations/{organizationId}/apis/{apiId}/versions/{apiVersionId}" \
+    -H "Authorization: Bearer {access_token}" \
+    -H "Content-Type: application/json" \
+    -d '{
+      "assetVersion": "1.1.0"
+    }'
+  ```
+</Accordion>
+
+---
+
+## API Classification
+
+### `POST` /organizations/{organizationId}/apis/{apiId}/versions/{apiVersionId}/classify
+
+Classify an API version into a specific environment. This creates a managed API instance in API Manager.
+
+<Accordion title="Parameters">
+  | Parameter | In | Type | Required | Description |
+  |---|---|---|---|---|
+  | `organizationId` | path | string | Yes | The ID of the organization |
+  | `apiId` | path | integer | Yes | The ID of the API |
+  | `apiVersionId` | path | integer | Yes | The ID of the API version |
+</Accordion>
+
+<Accordion title="Request body">
+  ```json
+  {
+    "environmentId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+    "instanceLabel": "mylabel"
+  }
+  ```
+</Accordion>
+
+<Accordion title="Example request">
+  ```bash
+  curl -X POST "https://anypoint.mulesoft.com/apiplatform/repository/v2/organizations/{organizationId}/apis/{apiId}/versions/{apiVersionId}/classify" \
+    -H "Authorization: Bearer {access_token}" \
+    -H "Content-Type: application/json" \
+    -d '{
+      "environmentId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+      "instanceLabel": "mylabel"
+    }'
+  ```
+</Accordion>
+
+<Tip>
+  Once an API version is classified into an environment, it appears in **API Manager** where you can apply policies, set SLA tiers, and manage alerts.
+</Tip>
+
+---
+
+## Contracts
+
+### `GET` /organizations/{organizationId}/applications/{applicationId}/contracts
+
+Retrieve all contracts (API access grants) for a specific client application.
+
+<Accordion title="Parameters">
+  | Parameter | In | Type | Required | Description |
+  |---|---|---|---|---|
+  | `organizationId` | path | string | Yes | The ID of the organization |
+  | `applicationId` | path | integer | Yes | The ID of the client application |
+</Accordion>
+
+<Accordion title="Example request">
+  ```bash
+  curl -X GET "https://anypoint.mulesoft.com/apiplatform/repository/v2/organizations/{organizationId}/applications/{applicationId}/contracts" \
+    -H "Authorization: Bearer {access_token}"
+  ```
+</Accordion>
+
+<Accordion title="Example response">
+  ```json
+  {
+    "contracts": [
+      {
+        "id": 1001,
+        "status": "APPROVED",
+        "apiId": 12345,
+        "apiVersionId": 67890,
+        "applicationId": 500,
+        "requestedTierId": 1
+      }
+    ],
+    "total": 1
+  }
+  ```
+</Accordion>
+
+---
+
+### `POST` /organizations/{organizationId}/apis/{apiId}/versions/{apiVersionId}/contracts/{contractId}/revoke
+
+Revoke an existing contract between a client application and an API version.
+
+<Accordion title="Parameters">
+  | Parameter | In | Type | Required | Description |
+  |---|---|---|---|---|
+  | `organizationId` | path | string | Yes | The ID of the organization |
+  | `apiId` | path | integer | Yes | The ID of the API |
+  | `apiVersionId` | path | integer | Yes | The ID of the API version |
+  | `contractId` | path | integer | Yes | The ID of the contract to revoke |
+</Accordion>
+
+<Accordion title="Example request">
+  ```bash
+  curl -X POST "https://anypoint.mulesoft.com/apiplatform/repository/v2/organizations/{organizationId}/apis/{apiId}/versions/{apiVersionId}/contracts/{contractId}/revoke" \
+    -H "Authorization: Bearer {access_token}"
+  ```
+</Accordion>
+
+<Warning>
+  Revoking a contract immediately removes the client application's access to the API. The application's existing `client_id` and `client_secret` will no longer pass policy enforcement.
+</Warning>
+
+---
+
+## Public Endpoints
+
+The following endpoints are publicly accessible and do **not** require authentication. They are designed for API portal consumers to discover and explore public APIs.
+
+<Note>
+  All `/public` endpoints operate without an `Authorization` header. When calling public endpoints from a portal, use the public client ID: `apiportal`.
+</Note>
+
+### `GET` /organizations/{organizationId}/public/apis
+
+Search for publicly visible APIs in the organization.
+
+<Accordion title="Parameters">
+  | Parameter | In | Type | Required | Description |
+  |---|---|---|---|---|
+  | `organizationId` | path | string | Yes | The ID of the organization |
+  | `query` | query | string | No | Search term to filter public APIs |
+  | `limit` | query | integer | No | Maximum number of results to return |
+  | `offset` | query | integer | No | Number of results to skip |
+</Accordion>
+
+<Accordion title="Example request">
+  ```bash
+  curl -X GET "https://anypoint.mulesoft.com/apiplatform/repository/v2/organizations/{organizationId}/public/apis?query=order"
+  ```
+</Accordion>
+
+<Accordion title="Example response">
+  ```json
+  {
+    "apis": [
+      {
+        "id": 12345,
+        "name": "Order API",
+        "description": "Public order management API",
+        "versions": [
+          {
+            "id": 67890,
+            "name": "v1",
+            "portalId": 9001
+          }
+        ]
+      }
+    ],
+    "total": 1
+  }
+  ```
+</Accordion>

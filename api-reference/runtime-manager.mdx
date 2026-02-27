@@ -1,0 +1,748 @@
+---
+title: "Runtime Manager API"
+description: "Manage servers, clusters, and application deployments"
+---
+
+## Base URL
+
+```
+https://anypoint.mulesoft.com/hybrid/api/v1
+```
+
+## Required Headers
+
+Every request to the Runtime Manager API must include the following headers:
+
+| Header | Description | Example |
+|--------|-------------|---------|
+| `Authorization` | Bearer token obtained from the Anypoint login or Connected App OAuth flow | `Bearer e5d7f8a0-b345-...` |
+| `X-ANYPNT-ENV-ID` | The target environment ID | `aabb1122-ccdd-...` |
+| `X-ANYPNT-ORG-ID` | The organization ID | `xxxx-yyyy-zzzz-...` |
+
+```bash
+# Header template for all requests
+-H "Authorization: Bearer {access_token}" \
+-H "X-ANYPNT-ENV-ID: {environmentId}" \
+-H "X-ANYPNT-ORG-ID: {organizationId}"
+```
+
+<Note>
+  The Runtime Manager API manages **on-premises** Mule runtimes (servers, server groups, and clusters) and the applications deployed to them. **CloudHub** application deployments use the separate CloudHub API (`https://anypoint.mulesoft.com/cloudhub/api`).
+</Note>
+
+---
+
+## Server Management
+
+### `GET` /servers
+
+List all registered servers in the target environment.
+
+<Accordion title="Parameters">
+  | Parameter | In | Type | Required | Description |
+  |---|---|---|---|---|
+  | `X-ANYPNT-ENV-ID` | header | string | Yes | The environment ID |
+  | `X-ANYPNT-ORG-ID` | header | string | Yes | The organization ID |
+</Accordion>
+
+<Accordion title="Example request">
+  ```bash
+  curl -X GET "https://anypoint.mulesoft.com/hybrid/api/v1/servers" \
+    -H "Authorization: Bearer {access_token}" \
+    -H "X-ANYPNT-ENV-ID: {environmentId}" \
+    -H "X-ANYPNT-ORG-ID: {organizationId}"
+  ```
+</Accordion>
+
+<Accordion title="Example response">
+  ```json
+  {
+    "data": [
+      {
+        "id": 101,
+        "name": "mule-server-prod-01",
+        "status": "RUNNING",
+        "muleVersion": "4.4.0",
+        "agentVersion": "2.4.28",
+        "addresses": [
+          { "ip": "10.0.1.15", "networkInterface": "eth0" }
+        ],
+        "type": "SERVER",
+        "serverGroupId": null,
+        "clusterId": null
+      },
+      {
+        "id": 102,
+        "name": "mule-server-prod-02",
+        "status": "RUNNING",
+        "muleVersion": "4.4.0",
+        "agentVersion": "2.4.28",
+        "addresses": [
+          { "ip": "10.0.1.16", "networkInterface": "eth0" }
+        ],
+        "type": "SERVER",
+        "serverGroupId": null,
+        "clusterId": 50
+      }
+    ]
+  }
+  ```
+</Accordion>
+
+---
+
+### `GET` /servers/{serverId}
+
+Retrieve the details of a specific server.
+
+<Accordion title="Parameters">
+  | Parameter | In | Type | Required | Description |
+  |---|---|---|---|---|
+  | `serverId` | path | integer | Yes | The ID of the server |
+</Accordion>
+
+<Accordion title="Example request">
+  ```bash
+  curl -X GET "https://anypoint.mulesoft.com/hybrid/api/v1/servers/{serverId}" \
+    -H "Authorization: Bearer {access_token}" \
+    -H "X-ANYPNT-ENV-ID: {environmentId}" \
+    -H "X-ANYPNT-ORG-ID: {organizationId}"
+  ```
+</Accordion>
+
+---
+
+### `PUT` /servers/{serverId}
+
+Update a server's name.
+
+<Accordion title="Parameters">
+  | Parameter | In | Type | Required | Description |
+  |---|---|---|---|---|
+  | `serverId` | path | integer | Yes | The ID of the server |
+</Accordion>
+
+<Accordion title="Request body">
+  ```json
+  {
+    "name": "mule-server-prod-01-renamed"
+  }
+  ```
+</Accordion>
+
+<Accordion title="Example request">
+  ```bash
+  curl -X PUT "https://anypoint.mulesoft.com/hybrid/api/v1/servers/{serverId}" \
+    -H "Authorization: Bearer {access_token}" \
+    -H "X-ANYPNT-ENV-ID: {environmentId}" \
+    -H "X-ANYPNT-ORG-ID: {organizationId}" \
+    -H "Content-Type: application/json" \
+    -d '{"name": "mule-server-prod-01-renamed"}'
+  ```
+</Accordion>
+
+---
+
+### `DELETE` /servers/{serverId}
+
+Delete (unregister) a server from the environment.
+
+<Accordion title="Parameters">
+  | Parameter | In | Type | Required | Description |
+  |---|---|---|---|---|
+  | `serverId` | path | integer | Yes | The ID of the server to delete |
+</Accordion>
+
+<Accordion title="Example request">
+  ```bash
+  curl -X DELETE "https://anypoint.mulesoft.com/hybrid/api/v1/servers/{serverId}" \
+    -H "Authorization: Bearer {access_token}" \
+    -H "X-ANYPNT-ENV-ID: {environmentId}" \
+    -H "X-ANYPNT-ORG-ID: {organizationId}"
+  ```
+</Accordion>
+
+<Warning>
+  Deleting a server unregisters it from Runtime Manager. Any applications deployed to this server will continue to run on the Mule runtime but can no longer be managed remotely. Undeploy applications first if you want a clean removal.
+</Warning>
+
+---
+
+### `POST` /servers/{serverId}/restart
+
+Restart a server's Mule runtime.
+
+<Accordion title="Parameters">
+  | Parameter | In | Type | Required | Description |
+  |---|---|---|---|---|
+  | `serverId` | path | integer | Yes | The ID of the server to restart |
+</Accordion>
+
+<Accordion title="Example request">
+  ```bash
+  curl -X POST "https://anypoint.mulesoft.com/hybrid/api/v1/servers/{serverId}/restart" \
+    -H "Authorization: Bearer {access_token}" \
+    -H "X-ANYPNT-ENV-ID: {environmentId}" \
+    -H "X-ANYPNT-ORG-ID: {organizationId}"
+  ```
+</Accordion>
+
+---
+
+### `POST` /servers/{serverId}/shutdown
+
+Shut down a server's Mule runtime gracefully.
+
+<Accordion title="Parameters">
+  | Parameter | In | Type | Required | Description |
+  |---|---|---|---|---|
+  | `serverId` | path | integer | Yes | The ID of the server to shut down |
+</Accordion>
+
+<Accordion title="Example request">
+  ```bash
+  curl -X POST "https://anypoint.mulesoft.com/hybrid/api/v1/servers/{serverId}/shutdown" \
+    -H "Authorization: Bearer {access_token}" \
+    -H "X-ANYPNT-ENV-ID: {environmentId}" \
+    -H "X-ANYPNT-ORG-ID: {organizationId}"
+  ```
+</Accordion>
+
+<Tip>
+  Use shutdown for planned maintenance windows. The server status transitions to `STOPPED` and can be restarted later via the restart endpoint or by starting the Mule runtime process directly on the host.
+</Tip>
+
+---
+
+## Server Groups
+
+### `POST` /serverGroups
+
+Create a new server group.
+
+<Accordion title="Request body">
+  ```json
+  {
+    "name": "prod-group-01",
+    "serverIds": [101, 102]
+  }
+  ```
+</Accordion>
+
+<Accordion title="Example request">
+  ```bash
+  curl -X POST "https://anypoint.mulesoft.com/hybrid/api/v1/serverGroups" \
+    -H "Authorization: Bearer {access_token}" \
+    -H "X-ANYPNT-ENV-ID: {environmentId}" \
+    -H "X-ANYPNT-ORG-ID: {organizationId}" \
+    -H "Content-Type: application/json" \
+    -d '{"name": "prod-group-01", "serverIds": [101, 102]}'
+  ```
+</Accordion>
+
+<Accordion title="Example response">
+  ```json
+  {
+    "data": {
+      "id": 200,
+      "name": "prod-group-01",
+      "servers": [
+        { "id": 101, "name": "mule-server-prod-01" },
+        { "id": 102, "name": "mule-server-prod-02" }
+      ]
+    }
+  }
+  ```
+</Accordion>
+
+---
+
+### `GET` /serverGroups
+
+List all server groups in the environment.
+
+<Accordion title="Example request">
+  ```bash
+  curl -X GET "https://anypoint.mulesoft.com/hybrid/api/v1/serverGroups" \
+    -H "Authorization: Bearer {access_token}" \
+    -H "X-ANYPNT-ENV-ID: {environmentId}" \
+    -H "X-ANYPNT-ORG-ID: {organizationId}"
+  ```
+</Accordion>
+
+---
+
+### `GET` /serverGroups/{groupId}
+
+Get the details of a specific server group.
+
+<Accordion title="Parameters">
+  | Parameter | In | Type | Required | Description |
+  |---|---|---|---|---|
+  | `groupId` | path | integer | Yes | The ID of the server group |
+</Accordion>
+
+<Accordion title="Example request">
+  ```bash
+  curl -X GET "https://anypoint.mulesoft.com/hybrid/api/v1/serverGroups/{groupId}" \
+    -H "Authorization: Bearer {access_token}" \
+    -H "X-ANYPNT-ENV-ID: {environmentId}" \
+    -H "X-ANYPNT-ORG-ID: {organizationId}"
+  ```
+</Accordion>
+
+---
+
+### `PUT` /serverGroups/{groupId}
+
+Rename a server group.
+
+<Accordion title="Parameters">
+  | Parameter | In | Type | Required | Description |
+  |---|---|---|---|---|
+  | `groupId` | path | integer | Yes | The ID of the server group |
+</Accordion>
+
+<Accordion title="Request body">
+  ```json
+  {
+    "name": "prod-group-01-renamed"
+  }
+  ```
+</Accordion>
+
+<Accordion title="Example request">
+  ```bash
+  curl -X PUT "https://anypoint.mulesoft.com/hybrid/api/v1/serverGroups/{groupId}" \
+    -H "Authorization: Bearer {access_token}" \
+    -H "X-ANYPNT-ENV-ID: {environmentId}" \
+    -H "X-ANYPNT-ORG-ID: {organizationId}" \
+    -H "Content-Type: application/json" \
+    -d '{"name": "prod-group-01-renamed"}'
+  ```
+</Accordion>
+
+---
+
+### `POST` /serverGroups/{groupId}/servers/{serverId}
+
+Add a server to an existing server group.
+
+<Accordion title="Parameters">
+  | Parameter | In | Type | Required | Description |
+  |---|---|---|---|---|
+  | `groupId` | path | integer | Yes | The ID of the server group |
+  | `serverId` | path | integer | Yes | The ID of the server to add |
+</Accordion>
+
+<Accordion title="Example request">
+  ```bash
+  curl -X POST "https://anypoint.mulesoft.com/hybrid/api/v1/serverGroups/{groupId}/servers/{serverId}" \
+    -H "Authorization: Bearer {access_token}" \
+    -H "X-ANYPNT-ENV-ID: {environmentId}" \
+    -H "X-ANYPNT-ORG-ID: {organizationId}"
+  ```
+</Accordion>
+
+---
+
+### `DELETE` /serverGroups/{groupId}/servers/{serverId}
+
+Remove a server from a server group.
+
+<Accordion title="Parameters">
+  | Parameter | In | Type | Required | Description |
+  |---|---|---|---|---|
+  | `groupId` | path | integer | Yes | The ID of the server group |
+  | `serverId` | path | integer | Yes | The ID of the server to remove |
+</Accordion>
+
+<Accordion title="Example request">
+  ```bash
+  curl -X DELETE "https://anypoint.mulesoft.com/hybrid/api/v1/serverGroups/{groupId}/servers/{serverId}" \
+    -H "Authorization: Bearer {access_token}" \
+    -H "X-ANYPNT-ENV-ID: {environmentId}" \
+    -H "X-ANYPNT-ORG-ID: {organizationId}"
+  ```
+</Accordion>
+
+---
+
+### `DELETE` /serverGroups/{groupId}
+
+Delete a server group. The servers in the group are released back to the environment as standalone servers.
+
+<Accordion title="Parameters">
+  | Parameter | In | Type | Required | Description |
+  |---|---|---|---|---|
+  | `groupId` | path | integer | Yes | The ID of the server group to delete |
+</Accordion>
+
+<Accordion title="Example request">
+  ```bash
+  curl -X DELETE "https://anypoint.mulesoft.com/hybrid/api/v1/serverGroups/{groupId}" \
+    -H "Authorization: Bearer {access_token}" \
+    -H "X-ANYPNT-ENV-ID: {environmentId}" \
+    -H "X-ANYPNT-ORG-ID: {organizationId}"
+  ```
+</Accordion>
+
+---
+
+## Clusters
+
+### `POST` /clusters
+
+Create a new cluster from existing servers.
+
+<Accordion title="Request body">
+  ```json
+  {
+    "name": "prod-cluster-01",
+    "multicastEnabled": false,
+    "servers": [
+      { "serverId": 101, "serverIp": "10.0.1.15" },
+      { "serverId": 102, "serverIp": "10.0.1.16" }
+    ]
+  }
+  ```
+</Accordion>
+
+<Accordion title="Example request">
+  ```bash
+  curl -X POST "https://anypoint.mulesoft.com/hybrid/api/v1/clusters" \
+    -H "Authorization: Bearer {access_token}" \
+    -H "X-ANYPNT-ENV-ID: {environmentId}" \
+    -H "X-ANYPNT-ORG-ID: {organizationId}" \
+    -H "Content-Type: application/json" \
+    -d '{
+      "name": "prod-cluster-01",
+      "multicastEnabled": false,
+      "servers": [
+        { "serverId": 101, "serverIp": "10.0.1.15" },
+        { "serverId": 102, "serverIp": "10.0.1.16" }
+      ]
+    }'
+  ```
+</Accordion>
+
+<Accordion title="Example response">
+  ```json
+  {
+    "data": {
+      "id": 50,
+      "name": "prod-cluster-01",
+      "multicastEnabled": false,
+      "status": "RUNNING",
+      "servers": [
+        { "id": 101, "name": "mule-server-prod-01", "status": "RUNNING" },
+        { "id": 102, "name": "mule-server-prod-02", "status": "RUNNING" }
+      ]
+    }
+  }
+  ```
+</Accordion>
+
+<Tip>
+  Set `multicastEnabled` to `false` for unicast clusters (recommended for cloud/VPC environments) and provide each server's IP. Set it to `true` only if your network supports multicast discovery.
+</Tip>
+
+---
+
+### `GET` /clusters
+
+List all clusters in the environment.
+
+<Accordion title="Example request">
+  ```bash
+  curl -X GET "https://anypoint.mulesoft.com/hybrid/api/v1/clusters" \
+    -H "Authorization: Bearer {access_token}" \
+    -H "X-ANYPNT-ENV-ID: {environmentId}" \
+    -H "X-ANYPNT-ORG-ID: {organizationId}"
+  ```
+</Accordion>
+
+---
+
+### `GET` /clusters/{clusterId}
+
+Get the details of a specific cluster.
+
+<Accordion title="Parameters">
+  | Parameter | In | Type | Required | Description |
+  |---|---|---|---|---|
+  | `clusterId` | path | integer | Yes | The ID of the cluster |
+</Accordion>
+
+<Accordion title="Example request">
+  ```bash
+  curl -X GET "https://anypoint.mulesoft.com/hybrid/api/v1/clusters/{clusterId}" \
+    -H "Authorization: Bearer {access_token}" \
+    -H "X-ANYPNT-ENV-ID: {environmentId}" \
+    -H "X-ANYPNT-ORG-ID: {organizationId}"
+  ```
+</Accordion>
+
+---
+
+### `PUT` /clusters/{clusterId}
+
+Update a cluster (e.g., add or remove nodes, rename).
+
+<Accordion title="Parameters">
+  | Parameter | In | Type | Required | Description |
+  |---|---|---|---|---|
+  | `clusterId` | path | integer | Yes | The ID of the cluster |
+</Accordion>
+
+<Accordion title="Request body">
+  ```json
+  {
+    "name": "prod-cluster-01",
+    "servers": [
+      { "serverId": 101, "serverIp": "10.0.1.15" },
+      { "serverId": 102, "serverIp": "10.0.1.16" },
+      { "serverId": 103, "serverIp": "10.0.1.17" }
+    ]
+  }
+  ```
+</Accordion>
+
+<Accordion title="Example request">
+  ```bash
+  curl -X PUT "https://anypoint.mulesoft.com/hybrid/api/v1/clusters/{clusterId}" \
+    -H "Authorization: Bearer {access_token}" \
+    -H "X-ANYPNT-ENV-ID: {environmentId}" \
+    -H "X-ANYPNT-ORG-ID: {organizationId}" \
+    -H "Content-Type: application/json" \
+    -d '{
+      "name": "prod-cluster-01",
+      "servers": [
+        { "serverId": 101, "serverIp": "10.0.1.15" },
+        { "serverId": 102, "serverIp": "10.0.1.16" },
+        { "serverId": 103, "serverIp": "10.0.1.17" }
+      ]
+    }'
+  ```
+</Accordion>
+
+---
+
+### `DELETE` /clusters/{clusterId}
+
+Delete a cluster. The member servers are released as standalone servers.
+
+<Accordion title="Parameters">
+  | Parameter | In | Type | Required | Description |
+  |---|---|---|---|---|
+  | `clusterId` | path | integer | Yes | The ID of the cluster to delete |
+</Accordion>
+
+<Accordion title="Example request">
+  ```bash
+  curl -X DELETE "https://anypoint.mulesoft.com/hybrid/api/v1/clusters/{clusterId}" \
+    -H "Authorization: Bearer {access_token}" \
+    -H "X-ANYPNT-ENV-ID: {environmentId}" \
+    -H "X-ANYPNT-ORG-ID: {organizationId}"
+  ```
+</Accordion>
+
+<Warning>
+  Deleting a cluster dissolves the cluster topology. Applications deployed to the cluster are undeployed. Undeploy applications first if you need to preserve their state.
+</Warning>
+
+---
+
+## Application Deployments
+
+### `GET` /applications
+
+List all applications deployed in the target environment.
+
+<Accordion title="Example request">
+  ```bash
+  curl -X GET "https://anypoint.mulesoft.com/hybrid/api/v1/applications" \
+    -H "Authorization: Bearer {access_token}" \
+    -H "X-ANYPNT-ENV-ID: {environmentId}" \
+    -H "X-ANYPNT-ORG-ID: {organizationId}"
+  ```
+</Accordion>
+
+<Accordion title="Example response">
+  ```json
+  {
+    "data": [
+      {
+        "id": 3001,
+        "name": "order-process-app",
+        "status": "STARTED",
+        "desiredStatus": "STARTED",
+        "artifact": {
+          "name": "order-process-app-1.0.0-mule-application.jar",
+          "fileName": "order-process-app-1.0.0-mule-application.jar"
+        },
+        "target": {
+          "id": 50,
+          "name": "prod-cluster-01",
+          "type": "CLUSTER"
+        },
+        "lastReportedStatus": "STARTED"
+      },
+      {
+        "id": 3002,
+        "name": "inventory-sync-app",
+        "status": "STARTED",
+        "desiredStatus": "STARTED",
+        "artifact": {
+          "name": "inventory-sync-app-2.1.0-mule-application.jar",
+          "fileName": "inventory-sync-app-2.1.0-mule-application.jar"
+        },
+        "target": {
+          "id": 101,
+          "name": "mule-server-prod-01",
+          "type": "SERVER"
+        },
+        "lastReportedStatus": "STARTED"
+      }
+    ]
+  }
+  ```
+</Accordion>
+
+---
+
+### `POST` /applications
+
+Deploy a new application to a server, server group, or cluster.
+
+<Accordion title="Request body (multipart/form-data)">
+  | Field | Type | Required | Description |
+  |---|---|---|---|
+  | `targetId` | string | Yes | The ID of the server, server group, or cluster |
+  | `artifactName` | string | Yes | The application name |
+  | `file` | binary | Yes | The Mule application JAR file |
+  | `configuration` | JSON string | No | Application properties as a JSON object |
+</Accordion>
+
+<Accordion title="Example request">
+  ```bash
+  curl -X POST "https://anypoint.mulesoft.com/hybrid/api/v1/applications" \
+    -H "Authorization: Bearer {access_token}" \
+    -H "X-ANYPNT-ENV-ID: {environmentId}" \
+    -H "X-ANYPNT-ORG-ID: {organizationId}" \
+    -F "targetId=50" \
+    -F "artifactName=order-process-app" \
+    -F "file=@/path/to/order-process-app-1.0.0-mule-application.jar"
+  ```
+</Accordion>
+
+<Accordion title="Example response">
+  ```json
+  {
+    "data": {
+      "id": 3001,
+      "name": "order-process-app",
+      "status": "DEPLOYING",
+      "desiredStatus": "STARTED",
+      "target": {
+        "id": 50,
+        "name": "prod-cluster-01",
+        "type": "CLUSTER"
+      }
+    }
+  }
+  ```
+</Accordion>
+
+---
+
+### `PUT` /applications/{appId}
+
+Redeploy (update) an existing application with a new artifact.
+
+<Accordion title="Parameters">
+  | Parameter | In | Type | Required | Description |
+  |---|---|---|---|---|
+  | `appId` | path | integer | Yes | The ID of the application to redeploy |
+</Accordion>
+
+<Accordion title="Example request">
+  ```bash
+  curl -X PUT "https://anypoint.mulesoft.com/hybrid/api/v1/applications/{appId}" \
+    -H "Authorization: Bearer {access_token}" \
+    -H "X-ANYPNT-ENV-ID: {environmentId}" \
+    -H "X-ANYPNT-ORG-ID: {organizationId}" \
+    -F "artifactName=order-process-app" \
+    -F "file=@/path/to/order-process-app-1.1.0-mule-application.jar"
+  ```
+</Accordion>
+
+<Tip>
+  Redeployment performs a rolling update on clusters. During a redeploy, the old version continues to serve traffic until the new version starts successfully.
+</Tip>
+
+---
+
+### `DELETE` /applications/{appId}
+
+Undeploy and remove an application.
+
+<Accordion title="Parameters">
+  | Parameter | In | Type | Required | Description |
+  |---|---|---|---|---|
+  | `appId` | path | integer | Yes | The ID of the application to undeploy |
+</Accordion>
+
+<Accordion title="Example request">
+  ```bash
+  curl -X DELETE "https://anypoint.mulesoft.com/hybrid/api/v1/applications/{appId}" \
+    -H "Authorization: Bearer {access_token}" \
+    -H "X-ANYPNT-ENV-ID: {environmentId}" \
+    -H "X-ANYPNT-ORG-ID: {organizationId}"
+  ```
+</Accordion>
+
+---
+
+### `GET` /applications/{appId}
+
+Retrieve the details of a specific deployed application.
+
+<Accordion title="Parameters">
+  | Parameter | In | Type | Required | Description |
+  |---|---|---|---|---|
+  | `appId` | path | integer | Yes | The ID of the application |
+</Accordion>
+
+<Accordion title="Example request">
+  ```bash
+  curl -X GET "https://anypoint.mulesoft.com/hybrid/api/v1/applications/{appId}" \
+    -H "Authorization: Bearer {access_token}" \
+    -H "X-ANYPNT-ENV-ID: {environmentId}" \
+    -H "X-ANYPNT-ORG-ID: {organizationId}"
+  ```
+</Accordion>
+
+<Accordion title="Example response">
+  ```json
+  {
+    "data": {
+      "id": 3001,
+      "name": "order-process-app",
+      "status": "STARTED",
+      "desiredStatus": "STARTED",
+      "artifact": {
+        "name": "order-process-app-1.0.0-mule-application.jar",
+        "fileName": "order-process-app-1.0.0-mule-application.jar"
+      },
+      "target": {
+        "id": 50,
+        "name": "prod-cluster-01",
+        "type": "CLUSTER"
+      },
+      "lastReportedStatus": "STARTED",
+      "deploymentUpdateStatus": null
+    }
+  }
+  ```
+</Accordion>
