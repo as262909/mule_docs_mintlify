@@ -1,0 +1,417 @@
+---
+title: "API Functional Monitoring"
+description: "Monitor API endpoints with automated BDD test suites"
+---
+
+## Overview
+
+API Functional Monitoring enables you to monitor public and private API endpoints by running automated test suites on a repeating schedule. Tests are written in a BDD (Behavior-Driven Development) syntax powered by DataWeave, and they can be authored either through the **Anypoint Monitoring UI** or programmatically using the **BAT CLI** (Blackbox Automated Testing Command Line Interface).
+
+When a monitor detects a failure -- such as an unexpected status code, missing response field, or slow response time -- it triggers notifications through channels like Slack, PagerDuty, email, and more. This provides continuous assurance that your APIs are behaving correctly in production.
+
+<CardGroup cols={2}>
+  <Card title="Anypoint Monitoring UI" icon="browser">
+    Build and schedule monitors visually through the Anypoint Platform web interface. Configure endpoints, assertions, and notifications without writing code.
+  </Card>
+  <Card title="BAT CLI" icon="terminal">
+    Author tests programmatically in DataWeave-based BDD syntax. Run tests locally during development, in CI/CD pipelines, or deploy them as scheduled monitors.
+  </Card>
+</CardGroup>
+
+---
+
+## Key Concepts
+
+<AccordionGroup>
+  <Accordion title="Monitors">
+    A **monitor** is a scheduled job that executes one or more API tests at regular intervals. Each monitor runs from a specific **location** (public or private) and reports results to the Anypoint Monitoring dashboard. Monitors can target a single endpoint or chain multiple requests together to test complex workflows.
+  </Accordion>
+
+  <Accordion title="Tests">
+    **Tests** are individual test cases written in BDD syntax using DataWeave. Each test describes a specific API behavior to validate, including the HTTP request to send and the assertions to evaluate against the response. Tests follow the **given-when-then** pattern:
+
+    - **Given** -- preconditions and test setup
+    - **When** -- the API call to execute
+    - **Then** -- assertions to validate
+
+    Tests are defined in `.dwl` files and organized into test suites.
+  </Accordion>
+
+  <Accordion title="Schedules">
+    **Schedules** define how frequently a monitor executes. You can configure intervals ranging from every few minutes to daily. Schedule options depend on the testing location:
+
+    | Interval | Public Location | Private Location |
+    |---|---|---|
+    | Every 15 minutes | Yes | Yes |
+    | Every 30 minutes | Yes | Yes |
+    | Every hour | Yes | Yes |
+    | Every 6 hours | Yes | Yes |
+    | Every 12 hours | Yes | Yes |
+    | Every 24 hours | Yes | Yes |
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## BDD Language
+
+API Functional Monitoring tests use a BDD syntax built on top of DataWeave. The language is designed to be readable and expressive, making it easy to describe API behavior in plain terms.
+
+```dwl
+import * from bat::BDD
+import * from bat::Assertions
+---
+suite("User API Suite") in [
+  it must 'return a list of users' in [
+    GET `$(config.url)/api/users` with {
+      headers: {
+        "Accept": "application/json"
+      }
+    } assert [
+      $.response.status mustEqual 200,
+      $.response.headers."Content-Type" mustEqual "application/json",
+      $.response.body mustMatch /.*users.*/
+    ]
+  ]
+]
+```
+
+<Note>
+  The BDD syntax is a DataWeave DSL, which means you have access to the full power of DataWeave for transformations, conditionals, and variable management within your tests. See the [BDD Test Syntax Reference](/api-testing/bdd-reference) for the complete language guide.
+</Note>
+
+---
+
+## Getting Started with BAT CLI
+
+### Installation
+
+Install the BAT CLI using npm:
+
+```bash
+# Install BAT CLI globally
+npm install -g bat-cli
+
+# Verify installation
+bat --version
+```
+
+### Initialize a Test Project
+
+```bash
+# Create a new test project
+bat init
+
+# This creates the following directory structure:
+# .
+# ├── bat.yaml
+# ├── config
+# │   ├── default.dwl
+# │   ├── devx.dwl
+# │   ├── qax.dwl
+# │   └── stgx.dwl
+# └── tests
+#     └── HelloWorld.dwl
+```
+
+### Directory Structure
+
+After running `bat init`, your project has the following structure:
+
+```
+.
+├── bat.yaml              # Test suite configuration
+├── config
+│   ├── default.dwl       # Default environment config
+│   ├── devx.dwl          # Development environment config
+│   ├── qax.dwl           # QA environment config
+│   └── stgx.dwl          # Staging environment config
+└── tests
+    └── HelloWorld.dwl     # Sample test file
+```
+
+| File/Directory | Purpose |
+|---|---|
+| `bat.yaml` | Defines the test suite name, test files to execute, and reporter configuration |
+| `config/` | Environment-specific configuration files that define variables like base URLs and credentials |
+| `config/default.dwl` | Fallback configuration used when no environment is specified |
+| `tests/` | Directory containing all `.dwl` test files |
+
+---
+
+## Configuration
+
+### bat.yaml
+
+The `bat.yaml` file is the entry point for your test suite. It defines which test files to run and how to report results.
+
+```yaml
+suite:
+  name: "Hello World Suite"
+files:
+  - file: tests/HelloWorld.dwl
+reporters:
+    - type: HTML
+      outFile: /tmp/HTML.html
+```
+
+### Expanded Configuration
+
+```yaml
+suite:
+  name: "E-Commerce API Test Suite"
+files:
+  - file: tests/AuthTests.dwl
+  - file: tests/ProductTests.dwl
+  - file: tests/OrderTests.dwl
+reporters:
+  - type: HTML
+    outFile: /tmp/api-test-report.html
+  - type: JUnit
+    outFile: /tmp/test-results.xml
+  - type: JSON
+    outFile: /tmp/results.json
+secrets:
+  - name: apiKey
+    value: ${API_KEY}
+  - name: clientSecret
+    value: ${CLIENT_SECRET}
+```
+
+### Environment Configuration Files
+
+Each `.dwl` file in the `config/` directory exports variables that your tests can reference using the `config` object.
+
+**config/default.dwl** (fallback defaults):
+```dwl
+{
+  url: "http://localhost:8081",
+  timeout: 30000
+}
+```
+
+**config/devx.dwl** (development environment):
+```dwl
+{
+  url: "https://dev-api.example.com",
+  timeout: 30000
+}
+```
+
+**config/qax.dwl** (QA environment):
+```dwl
+{
+  url: "https://qa-api.example.com",
+  timeout: 60000
+}
+```
+
+**config/stgx.dwl** (staging environment):
+```dwl
+{
+  url: "https://staging-api.example.com",
+  timeout: 60000
+}
+```
+
+<Tip>
+  Use the `--environment` flag when running BAT to target a specific configuration:
+
+  ```bash
+  # Run tests against the QA environment
+  bat --environment=qax
+
+  # Run tests against the staging environment
+  bat --environment=stgx
+  ```
+
+  If no environment is specified, BAT uses `config/default.dwl`.
+</Tip>
+
+---
+
+## Sample Test: HelloWorld.dwl
+
+The default test file generated by `bat init` demonstrates the basic structure of a BDD test:
+
+```dwl
+import * from bat::BDD
+import * from bat::Assertions
+---
+suite("Hello world suite") in [
+  it must 'answer 200' in [
+    GET `$(config.url)` with {} assert [
+      $.response.status mustEqual 200
+    ]
+  ]
+]
+```
+
+### Breakdown
+
+| Element | Description |
+|---|---|
+| `import * from bat::BDD` | Imports the BDD keywords: `suite`, `describe`, `it`, `must`, etc. |
+| `import * from bat::Assertions` | Imports assertion matchers: `mustEqual`, `mustMatch`, etc. |
+| `suite("...")` | Defines a test suite with a descriptive name |
+| `it must '...'` | Defines a mandatory test case (fails the suite if this test fails) |
+| `GET \`...\` with {}` | Sends an HTTP GET request to the specified URL |
+| `assert [...]` | Evaluates one or more assertions against the response |
+| `$.response.status` | Accesses the HTTP status code of the response |
+| `mustEqual 200` | Asserts that the value must equal `200` |
+
+---
+
+## Reporters
+
+BAT supports multiple reporter types for outputting test results. You can configure one or more reporters in `bat.yaml`.
+
+| Reporter | Description | Use Case |
+|---|---|---|
+| **HTML** | Generates a human-readable HTML report | Local development, team review |
+| **JSON** | Outputs raw JSON test results | Programmatic processing, dashboards |
+| **JUnit** | Generates JUnit-compatible XML | CI/CD integration (Jenkins, GitHub Actions) |
+| **Slack** | Sends results to a Slack channel | Team notifications |
+| **PagerDuty** | Triggers PagerDuty incidents on failure | On-call alerting |
+| **SumoLogic** | Sends results to SumoLogic | Log aggregation and analysis |
+| **Email** | Sends results via email | Stakeholder notifications |
+| **NewRelic** | Reports metrics to New Relic | APM dashboards |
+
+### Reporter Configuration Examples
+
+```yaml
+reporters:
+  # Generate an HTML report
+  - type: HTML
+    outFile: /tmp/report.html
+
+  # Send failures to Slack
+  - type: Slack
+    options:
+      webhook: "https://hooks.slack.com/services/T00/B00/xxxxx"
+
+  # Send failures to PagerDuty
+  - type: PagerDuty
+    options:
+      routingKey: "your-pagerduty-routing-key"
+
+  # Output JUnit XML for CI/CD
+  - type: JUnit
+    outFile: /tmp/junit-results.xml
+```
+
+---
+
+## Public vs. Private API Monitoring
+
+<CardGroup cols={2}>
+  <Card title="Public Locations" icon="globe">
+    Monitors running from **public locations** execute from MuleSoft-managed infrastructure in cloud regions (US East, US West, EU Ireland, etc.). Use public locations to test externally accessible API endpoints.
+
+    - No additional setup required
+    - Available in multiple geographic regions
+    - Ideal for testing internet-facing APIs
+  </Card>
+  <Card title="Private Locations" icon="lock">
+    Monitors running from **private locations** execute inside your own network using a **Mule runtime agent**. Use private locations to test APIs that are not accessible from the public internet.
+
+    - Requires a Mule runtime deployed in your network
+    - The runtime must have connectivity to the target API
+    - Ideal for testing internal, VPN-protected, or firewall-restricted APIs
+  </Card>
+</CardGroup>
+
+<Note>
+  Private locations require deploying a lightweight Mule runtime that acts as the monitoring agent. This runtime must be registered with the Anypoint Platform and have network access to the APIs you want to monitor.
+</Note>
+
+---
+
+## Permission Requirements
+
+To create and manage API Functional Monitors, users need the following permissions:
+
+| Permission | Source | Required For |
+|---|---|---|
+| **Anypoint Monitoring Viewer** | Anypoint Monitoring | View monitor results and dashboards |
+| **Anypoint Monitoring Admin** | Anypoint Monitoring | Create, edit, delete, and schedule monitors |
+| **Exchange Viewer** | Anypoint Exchange | View API specs referenced by monitors |
+| **Exchange Contributor** | Anypoint Exchange | Upload test artifacts to Exchange |
+| **Exchange Admin** | Anypoint Exchange | Manage test artifacts in Exchange |
+
+<Warning>
+  Without the **Anypoint Monitoring Admin** role, users can view existing monitor results but cannot create new monitors or modify schedules. Assign this role to team members responsible for setting up and maintaining monitors.
+</Warning>
+
+---
+
+## Running Tests
+
+### Local Execution
+
+```bash
+# Run all tests with default configuration
+bat
+
+# Run tests against a specific environment
+bat --environment=qax
+
+# Run a specific test file
+bat tests/AuthTests.dwl
+
+# Run with verbose output
+bat --verbose
+```
+
+### CI/CD Integration
+
+BAT integrates naturally into CI/CD pipelines. Here is an example GitHub Actions workflow step:
+
+```yaml
+- name: Run API Tests
+  run: |
+    npm install -g bat-cli
+    bat --environment=stgx
+  env:
+    API_KEY: ${{ secrets.API_KEY }}
+```
+
+And a Jenkins pipeline step:
+
+```groovy
+stage('API Tests') {
+    steps {
+        sh 'npm install -g bat-cli'
+        sh 'bat --environment=qax'
+    }
+}
+```
+
+### Deploying as Scheduled Monitors
+
+To deploy your BAT tests as a scheduled monitor in the Anypoint Platform:
+
+```bash
+# Login to Anypoint Platform
+bat login --username=your-username --password=your-password
+
+# Deploy tests as a monitor
+bat deploy --name="Production API Monitor" --schedule="every 15 minutes"
+```
+
+<Tip>
+  Start with a longer schedule interval (e.g., every hour) and tighten it as you gain confidence in your tests and the APIs they monitor. Overly frequent monitoring can generate noise if your tests are flaky.
+</Tip>
+
+---
+
+## Explore API Functional Monitoring
+
+<CardGroup cols={2}>
+  <Card title="BDD Test Syntax Reference" icon="code" href="/api-testing/bdd-reference">
+    Complete reference for writing API tests with BAT BDD syntax, including HTTP methods, assertions, state management, and real-world examples.
+  </Card>
+  <Card title="Creating Monitors" icon="plus" href="/api-testing/create-monitor">
+    Step-by-step guide to setting up API monitors with endpoints, assertions, and notifications through the Anypoint Monitoring UI.
+  </Card>
+</CardGroup>

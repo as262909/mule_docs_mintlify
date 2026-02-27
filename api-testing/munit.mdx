@@ -1,0 +1,557 @@
+---
+title: "MUnit Testing Framework"
+description: "Build automated unit and integration tests for Mule applications"
+---
+
+## Overview
+
+MUnit is MuleSoft's native testing framework for Mule applications. It provides a full suite of integration and unit test capabilities that run inside Anypoint Studio and Anypoint Code Builder, and it integrates seamlessly with Apache Maven and the Surefire plugin for CI/CD pipeline execution.
+
+With MUnit, you can test Mule flows in isolation by mocking connectors, verifying processor calls, and asserting on payloads, attributes, and variables -- all without deploying to a runtime. Tests are written in the same XML-based Mule language you already use to build applications, so there is no additional language to learn.
+
+<Tip>
+  MUnit tests execute against an **embedded Mule runtime** on your local machine. This means you can run comprehensive integration tests without deploying to CloudHub or an on-premise server.
+</Tip>
+
+---
+
+## Compatibility
+
+| MUnit Version | Mule Runtime | Notes |
+|---|---|---|
+| **MUnit 3.x** | Mule 4.3+ | Current version, recommended for all new projects |
+| **MUnit 2.x** | Mule 4.0 -- 4.2 | Legacy, upgrade to 3.x recommended |
+| **MUnit 1.x** | Mule 3.x | End of life, not supported |
+
+<Warning>
+  MUnit 3.0+ requires **Mule Runtime 4.3 or later**. If your project targets an earlier Mule 4 version, you must use MUnit 2.x. Check your `pom.xml` for the `mule.version` property to confirm compatibility.
+</Warning>
+
+---
+
+## Core Capabilities
+
+MUnit provides a rich set of testing features that cover the full range of unit and integration testing scenarios.
+
+| Capability | Description |
+|---|---|
+| **Create tests in Mule code** | Write tests using the same XML DSL as your Mule application -- no additional language required |
+| **Mock processors** | Replace connectors and operations with simulated responses to isolate the unit under test |
+| **Spy on processors** | Intercept processor execution to inspect inputs and outputs without altering behavior |
+| **Verify processor calls** | Assert that a specific processor was called (or not called) a given number of times |
+| **Enable/disable tests** | Selectively skip tests using the `ignore` attribute for work-in-progress scenarios |
+| **Tag tests** | Organize tests with tags and run subsets from the command line or IDE |
+| **Coverage reports** | Measure flow coverage and enforce minimum thresholds to prevent regressions |
+
+---
+
+## Development Environments
+
+<CardGroup cols={2}>
+  <Card title="Anypoint Studio" icon="desktop">
+    The full-featured desktop IDE provides a **visual test editor** where you can build tests by dragging and dropping processors, a dedicated **MUnit test runner** panel, and integrated **coverage reports**. Right-click any flow to auto-generate a test scaffold.
+  </Card>
+  <Card title="Anypoint Code Builder" icon="code">
+    The cloud-based and VS Code-based IDE supports MUnit test authoring in XML. Tests run via the integrated terminal using Maven commands. Ideal for teams that prefer lightweight, code-first development.
+  </Card>
+</CardGroup>
+
+---
+
+## MUnit Modules
+
+MUnit is composed of two Maven modules that work together. Both are included automatically when you create a Mule project with MUnit support enabled.
+
+<AccordionGroup>
+  <Accordion title="MUnit (Core Runner)">
+    The `munit` module provides the test execution engine. It is responsible for:
+
+    - Discovering and loading test suites
+    - Managing the test lifecycle (before-suite, before-test, test, after-test, after-suite)
+    - Reporting test results to the IDE and Maven Surefire
+    - Generating coverage data
+
+    **Maven coordinates:**
+    ```xml
+    <dependency>
+      <groupId>com.mulesoft.munit</groupId>
+      <artifactId>munit-runner</artifactId>
+      <version>${munit.version}</version>
+      <classifier>mule-plugin</classifier>
+      <scope>test</scope>
+    </dependency>
+    ```
+  </Accordion>
+
+  <Accordion title="MUnit Tools (Utilities)">
+    The `munit-tools` module provides the assertion library, mocking framework, and utility processors. Key components include:
+
+    - **Assertions:** `assert-that`, `assert-equals`, `fail`
+    - **Mocking:** `mock-when`, `then-return`, `then-call`
+    - **Spying:** `spy` with before-call and after-call handlers
+    - **Verification:** `verify-call` with times, at-least, and at-most matchers
+    - **Utilities:** `sleep`, `queue`, `dequeue`
+
+    **Maven coordinates:**
+    ```xml
+    <dependency>
+      <groupId>com.mulesoft.munit</groupId>
+      <artifactId>munit-tools</artifactId>
+      <version>${munit.version}</version>
+      <classifier>mule-plugin</classifier>
+      <scope>test</scope>
+    </dependency>
+    ```
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Test Structure
+
+Every MUnit test follows a three-phase structure inspired by the Arrange-Act-Assert pattern: **Behavior**, **Execution**, and **Validation**. This structure makes tests readable and predictable.
+
+```xml
+<munit:test name="test-greeting-endpoint" description="Test the greeting API returns 200">
+
+  <munit:behavior>
+    <!-- ARRANGE: Set up test data, configure mocks -->
+    <munit-tools:mock-when processor="http:request">
+      <munit-tools:with-attributes>
+        <munit-tools:with-attribute attributeName="doc:name" whereValue="Call External API"/>
+      </munit-tools:with-attributes>
+      <munit-tools:then-return>
+        <munit-tools:payload value="#[{message: 'Hello from mock'}]" mediaType="application/json"/>
+      </munit-tools:then-return>
+    </munit-tools:mock-when>
+  </munit:behavior>
+
+  <munit:execution>
+    <!-- ACT: Trigger the flow under test -->
+    <http:request method="GET" url="http://localhost:8081/api/greeting"/>
+  </munit:execution>
+
+  <munit:validation>
+    <!-- ASSERT: Verify the results -->
+    <munit-tools:assert-that
+      expression="#[attributes.statusCode]"
+      is="#[MunitTools::equalTo(200)]"/>
+    <munit-tools:assert-that
+      expression="#[payload.message]"
+      is="#[MunitTools::containsString('Hello')]"/>
+  </munit:validation>
+
+</munit:test>
+```
+
+<Note>
+  The three phases are **optional**. A minimal test only needs the `munit:execution` block. However, using all three phases consistently improves readability and makes test intent clear.
+</Note>
+
+### Phase Reference
+
+| Phase | Purpose | Stops on Failure |
+|---|---|---|
+| `munit:behavior` | Set up preconditions: initialize variables, configure mocks, prepare test data | Yes |
+| `munit:execution` | Execute the flow or processor under test | Yes |
+| `munit:validation` | Assert on results: check payloads, attributes, variables, and side effects | Yes |
+
+---
+
+## Lifecycle Hooks
+
+MUnit supports setup and teardown hooks at both the suite and test level. These are useful for initializing shared resources, seeding databases, or cleaning up after tests.
+
+```xml
+<munit:before-suite name="setup-database" description="Seed test data">
+  <db:execute-script config-ref="Test_Database_Config">
+    <db:sql>INSERT INTO users (id, name) VALUES (1, 'Test User')</db:sql>
+  </db:execute-script>
+</munit:before-suite>
+
+<munit:before-test name="reset-payload" description="Clear payload before each test">
+  <set-payload value="#[null]"/>
+</munit:before-test>
+
+<munit:after-test name="log-result" description="Log test outcome">
+  <logger level="INFO" message="Test completed"/>
+</munit:after-test>
+
+<munit:after-suite name="cleanup-database" description="Remove test data">
+  <db:execute-script config-ref="Test_Database_Config">
+    <db:sql>DELETE FROM users WHERE id = 1</db:sql>
+  </db:execute-script>
+</munit:after-suite>
+```
+
+---
+
+## Mocking Processors
+
+Mocking replaces the behavior of a processor with a simulated response. This is essential for isolating the unit under test from external dependencies such as databases, HTTP services, and message brokers.
+
+### Mock a Connector Operation
+
+```xml
+<munit-tools:mock-when processor="db:select">
+  <munit-tools:with-attributes>
+    <munit-tools:with-attribute attributeName="doc:name" whereValue="Get User by ID"/>
+  </munit-tools:with-attributes>
+  <munit-tools:then-return>
+    <munit-tools:payload value="#[[{id: 1, name: 'Jane Doe', email: 'jane@example.com'}]]"
+                         mediaType="application/java"/>
+  </munit-tools:then-return>
+</munit-tools:mock-when>
+```
+
+### Spy on a Processor
+
+Spying lets you intercept a processor call without changing its behavior. Use it to inspect inputs and outputs.
+
+```xml
+<munit-tools:spy processor="http:request">
+  <munit-tools:with-attributes>
+    <munit-tools:with-attribute attributeName="doc:name" whereValue="Call Payment Service"/>
+  </munit-tools:with-attributes>
+  <munit-tools:before-call>
+    <set-variable variableName="requestPayload" value="#[payload]"/>
+  </munit-tools:before-call>
+  <munit-tools:after-call>
+    <set-variable variableName="responsePayload" value="#[payload]"/>
+  </munit-tools:after-call>
+</munit-tools:spy>
+```
+
+### Verify a Processor Was Called
+
+```xml
+<munit-tools:verify-call processor="http:request">
+  <munit-tools:with-attributes>
+    <munit-tools:with-attribute attributeName="doc:name" whereValue="Call Payment Service"/>
+  </munit-tools:with-attributes>
+  <munit-tools:times count="1"/>
+</munit-tools:verify-call>
+```
+
+---
+
+## Assertions Reference
+
+MUnit Tools provides a rich assertion library based on Hamcrest-style matchers, accessed through the `MunitTools::` namespace in DataWeave expressions.
+
+| Matcher | Description | Example |
+|---|---|---|
+| `equalTo(value)` | Exact equality | `#[MunitTools::equalTo(200)]` |
+| `not(matcher)` | Negates a matcher | `#[MunitTools::not(MunitTools::equalTo(500))]` |
+| `containsString(str)` | String contains substring | `#[MunitTools::containsString('success')]` |
+| `startsWith(str)` | String starts with prefix | `#[MunitTools::startsWith('OK')]` |
+| `greaterThan(num)` | Numeric comparison | `#[MunitTools::greaterThan(0)]` |
+| `lessThan(num)` | Numeric comparison | `#[MunitTools::lessThan(100)]` |
+| `nullValue()` | Value is null | `#[MunitTools::nullValue()]` |
+| `notNullValue()` | Value is not null | `#[MunitTools::notNullValue()]` |
+| `hasSize(num)` | Collection size | `#[MunitTools::hasSize(3)]` |
+| `isEmptyCollection()` | Collection is empty | `#[MunitTools::isEmptyCollection()]` |
+
+### Example: Multiple Assertions
+
+```xml
+<munit:validation>
+  <munit-tools:assert-that
+    expression="#[attributes.statusCode]"
+    is="#[MunitTools::equalTo(200)]"
+    message="Expected HTTP 200 but got a different status code"/>
+
+  <munit-tools:assert-that
+    expression="#[payload.users]"
+    is="#[MunitTools::hasSize(3)]"
+    message="Expected 3 users in the response"/>
+
+  <munit-tools:assert-that
+    expression="#[payload.users[0].name]"
+    is="#[MunitTools::not(MunitTools::nullValue())]"
+    message="First user name should not be null"/>
+</munit:validation>
+```
+
+---
+
+## Scaffolding Tests from API Specs
+
+MUnit can automatically generate test skeletons from your RAML or OAS API specification. This is one of the fastest ways to bootstrap a comprehensive test suite.
+
+<Steps>
+  <Step title="Import Your API Spec">
+    Ensure your Mule project references a RAML or OAS specification file in the `src/main/resources/api/` directory, or that it is synced from Exchange.
+  </Step>
+  <Step title="Generate the Test Suite">
+    In Anypoint Studio, right-click the API spec file and select **MUnit > Scaffold Test Suite**. MUnit generates a test file in `src/test/munit/` with one test per API resource and method combination.
+  </Step>
+  <Step title="Review and Customize">
+    Open the generated test suite. Each test includes placeholders for behavior, execution, and validation phases. Replace the placeholders with real test data, mocks, and assertions.
+  </Step>
+  <Step title="Run the Tests">
+    Right-click the test file and select **Run As > MUnit**. Alternatively, run from the command line:
+
+    ```bash
+    mvn clean test -Dmunit.test=test-suite-name
+    ```
+  </Step>
+</Steps>
+
+<Tip>
+  Scaffolding generates a test for every endpoint defined in your spec. Use this as a starting point, then add edge cases, error scenarios, and conditional logic specific to your implementation.
+</Tip>
+
+---
+
+## Running Tests
+
+### From Anypoint Studio
+
+<Steps>
+  <Step title="Run a Single Test Suite">
+    Right-click the test file in `src/test/munit/` and select **Run As > MUnit**. The MUnit runner panel opens and displays real-time test results.
+  </Step>
+  <Step title="Run All Tests">
+    Right-click the project root and select **Run As > MUnit**. All test suites in `src/test/munit/` execute sequentially.
+  </Step>
+  <Step title="Debug a Test">
+    Right-click the test file and select **Debug As > MUnit**. Set breakpoints in your Mule flow or test XML to step through execution.
+  </Step>
+</Steps>
+
+### From the Command Line (Maven)
+
+```bash
+# Run all MUnit tests
+mvn clean test
+
+# Run a specific test suite
+mvn clean test -Dmunit.test=greeting-api-test-suite
+
+# Run tests with a specific tag
+mvn clean test -Dmunit.tags=smoke
+
+# Skip MUnit tests during build
+mvn clean package -DskipMunitTests
+```
+
+<Note>
+  MUnit integrates with Maven Surefire. Test results are output to `target/surefire-reports/` in standard JUnit XML format, making them compatible with CI/CD tools like Jenkins, GitHub Actions, and GitLab CI.
+</Note>
+
+---
+
+## Coverage Reports
+
+MUnit coverage reports measure how much of your Mule application is exercised by your test suite. Coverage is calculated at the **flow** and **processor** level.
+
+### Enabling Coverage
+
+Add the following to your `pom.xml` to enable coverage reporting and enforce a minimum threshold:
+
+```xml
+<plugin>
+  <groupId>com.mulesoft.munit.tools</groupId>
+  <artifactId>munit-maven-plugin</artifactId>
+  <version>${munit.version}</version>
+  <executions>
+    <execution>
+      <id>test</id>
+      <phase>test</phase>
+      <goals>
+        <goal>test</goal>
+        <goal>coverage-report</goal>
+      </goals>
+    </execution>
+  </executions>
+  <configuration>
+    <coverage>
+      <runCoverage>true</runCoverage>
+      <failBuild>true</failBuild>
+      <requiredApplicationCoverage>80</requiredApplicationCoverage>
+      <requiredFlowCoverage>80</requiredFlowCoverage>
+      <formats>
+        <format>html</format>
+        <format>json</format>
+      </formats>
+    </coverage>
+  </configuration>
+</plugin>
+```
+
+### Coverage Thresholds
+
+| Threshold | Description |
+|---|---|
+| `requiredApplicationCoverage` | Minimum overall application coverage percentage |
+| `requiredFlowCoverage` | Minimum coverage per individual flow |
+| `requiredResourceCoverage` | Minimum coverage per resource file |
+
+<Warning>
+  When `failBuild` is set to `true`, the Maven build fails if any coverage threshold is not met. This is recommended for CI/CD pipelines to prevent untested code from reaching production.
+</Warning>
+
+### Viewing Reports
+
+After running `mvn clean test`, coverage reports are generated at:
+
+- **HTML Report:** `target/site/munit/coverage/summary.html`
+- **JSON Report:** `target/site/munit/coverage/munit-coverage.json`
+
+Open the HTML report in a browser to see a visual breakdown of coverage by flow, sub-flow, and processor.
+
+---
+
+## Complete Example: Testing a REST API
+
+The following example demonstrates a complete MUnit test suite for a REST API that retrieves user data from a database.
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xmlns:munit="http://www.mulesoft.org/schema/mule/munit"
+      xmlns:munit-tools="http://www.mulesoft.org/schema/mule/munit-tools"
+      xmlns:http="http://www.mulesoft.org/schema/mule/http"
+      xmlns="http://www.mulesoft.org/schema/mule/core"
+      xsi:schemaLocation="
+        http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+        http://www.mulesoft.org/schema/mule/munit http://www.mulesoft.org/schema/mule/munit/current/mule-munit.xsd
+        http://www.mulesoft.org/schema/mule/munit-tools http://www.mulesoft.org/schema/mule/munit-tools/current/mule-munit-tools.xsd
+        http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+
+  <munit:config name="user-api-test-suite.xml"/>
+
+  <!-- Setup: Seed test data before the suite runs -->
+  <munit:before-suite name="seed-test-data">
+    <munit-tools:store key="testUserId" value="#[1]"/>
+  </munit:before-suite>
+
+  <!-- Test 1: GET /api/users returns 200 with a list of users -->
+  <munit:test name="get-users-returns-200" description="GET /api/users returns all users">
+    <munit:behavior>
+      <munit-tools:mock-when processor="db:select">
+        <munit-tools:with-attributes>
+          <munit-tools:with-attribute attributeName="doc:name" whereValue="Select All Users"/>
+        </munit-tools:with-attributes>
+        <munit-tools:then-return>
+          <munit-tools:payload value="#[[
+            {id: 1, name: 'Alice', email: 'alice@example.com'},
+            {id: 2, name: 'Bob', email: 'bob@example.com'}
+          ]]" mediaType="application/java"/>
+        </munit-tools:then-return>
+      </munit-tools:mock-when>
+    </munit:behavior>
+
+    <munit:execution>
+      <flow-ref name="get-users-flow"/>
+    </munit:execution>
+
+    <munit:validation>
+      <munit-tools:assert-that expression="#[attributes.statusCode]"
+                                is="#[MunitTools::equalTo(200)]"/>
+      <munit-tools:assert-that expression="#[sizeOf(payload)]"
+                                is="#[MunitTools::equalTo(2)]"/>
+      <munit-tools:assert-that expression="#[payload[0].name]"
+                                is="#[MunitTools::equalTo('Alice')]"/>
+    </munit:validation>
+  </munit:test>
+
+  <!-- Test 2: GET /api/users/1 returns a single user -->
+  <munit:test name="get-user-by-id-returns-200" description="GET /api/users/:id returns the correct user">
+    <munit:behavior>
+      <set-variable variableName="userId" value="#[1]"/>
+      <munit-tools:mock-when processor="db:select">
+        <munit-tools:with-attributes>
+          <munit-tools:with-attribute attributeName="doc:name" whereValue="Select User by ID"/>
+        </munit-tools:with-attributes>
+        <munit-tools:then-return>
+          <munit-tools:payload value="#[{id: 1, name: 'Alice', email: 'alice@example.com'}]"
+                               mediaType="application/java"/>
+        </munit-tools:then-return>
+      </munit-tools:mock-when>
+    </munit:behavior>
+
+    <munit:execution>
+      <flow-ref name="get-user-by-id-flow"/>
+    </munit:execution>
+
+    <munit:validation>
+      <munit-tools:assert-that expression="#[attributes.statusCode]"
+                                is="#[MunitTools::equalTo(200)]"/>
+      <munit-tools:assert-that expression="#[payload.name]"
+                                is="#[MunitTools::equalTo('Alice')]"/>
+      <munit-tools:assert-that expression="#[payload.email]"
+                                is="#[MunitTools::equalTo('alice@example.com')]"/>
+    </munit:validation>
+  </munit:test>
+
+  <!-- Test 3: GET /api/users/999 returns 404 for non-existent user -->
+  <munit:test name="get-user-not-found-returns-404" description="GET /api/users/:id returns 404 when user does not exist">
+    <munit:behavior>
+      <set-variable variableName="userId" value="#[999]"/>
+      <munit-tools:mock-when processor="db:select">
+        <munit-tools:with-attributes>
+          <munit-tools:with-attribute attributeName="doc:name" whereValue="Select User by ID"/>
+        </munit-tools:with-attributes>
+        <munit-tools:then-return>
+          <munit-tools:payload value="#[null]" mediaType="application/java"/>
+        </munit-tools:then-return>
+      </munit-tools:mock-when>
+    </munit:behavior>
+
+    <munit:execution>
+      <flow-ref name="get-user-by-id-flow"/>
+    </munit:execution>
+
+    <munit:validation>
+      <munit-tools:assert-that expression="#[attributes.statusCode]"
+                                is="#[MunitTools::equalTo(404)]"/>
+      <munit-tools:assert-that expression="#[payload.message]"
+                                is="#[MunitTools::equalTo('User not found')]"/>
+    </munit:validation>
+  </munit:test>
+
+  <!-- Cleanup: Run after all tests in the suite -->
+  <munit:after-suite name="cleanup-test-data">
+    <logger level="INFO" message="User API test suite completed"/>
+  </munit:after-suite>
+
+</mule>
+```
+
+---
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Test Naming Conventions">
+    Use descriptive names that communicate the scenario and expected outcome at a glance:
+
+    - `get-users-returns-200` -- clear about what is tested and what is expected
+    - `create-user-with-missing-email-returns-400` -- describes the edge case
+    - `test1` -- avoid generic names that require reading the test body to understand
+  </Accordion>
+
+  <Accordion title="Mock External Dependencies">
+    Always mock HTTP requests, database calls, and third-party connector operations in unit tests. This ensures tests are fast, deterministic, and do not depend on external service availability.
+  </Accordion>
+
+  <Accordion title="Test Error Paths">
+    Do not only test the happy path. Write tests for:
+
+    - Invalid input (400 errors)
+    - Missing resources (404 errors)
+    - Authentication failures (401/403 errors)
+    - Downstream service failures (500 errors, timeouts)
+    - Edge cases (empty collections, null values, boundary values)
+  </Accordion>
+
+  <Accordion title="Enforce Coverage in CI/CD">
+    Set `failBuild` to `true` and define minimum coverage thresholds in your `pom.xml`. This prevents untested code from being merged or deployed. A threshold of **80%** is a common starting point.
+  </Accordion>
+
+  <Accordion title="Keep Tests Independent">
+    Each test should be self-contained and not depend on the execution order or side effects of other tests. Use `before-test` and `after-test` hooks to reset state between tests.
+  </Accordion>
+</AccordionGroup>

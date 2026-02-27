@@ -1,0 +1,806 @@
+---
+title: "BDD Test Syntax Reference"
+description: "Complete reference for writing API tests with BAT BDD syntax"
+---
+
+## Overview
+
+The BAT BDD (Behavior-Driven Development) test language is a DataWeave-based DSL for writing expressive, readable API tests. It provides keywords for structuring tests, making HTTP requests, asserting on responses, and managing state across test steps. This page serves as the complete reference for the BDD syntax.
+
+<Tip>
+  Every BDD test file is a valid DataWeave file with a `.dwl` extension. You have access to the full power of DataWeave -- variables, functions, conditionals, and transformations -- in addition to the BDD-specific keywords documented here.
+</Tip>
+
+---
+
+## Core Imports
+
+Every BDD test file begins with imports from the BAT modules. These imports provide the keywords and matchers used throughout your tests.
+
+```dwl
+import * from bat::BDD          // Test structure keywords: suite, describe, it, must, etc.
+import * from bat::Assertions   // Assertion matchers: mustEqual, mustMatch, etc.
+import * from bat::Mutable      // State management: HashMap for sharing data between steps
+```
+
+| Module | Purpose |
+|---|---|
+| `bat::BDD` | Provides test structure keywords (`suite`, `describe`, `it`, `must`, `should`, `given`, `when`) and HTTP method functions (`GET`, `POST`, `PUT`, `DELETE`, `PATCH`, `HEAD`, `OPTIONS`) |
+| `bat::Assertions` | Provides assertion matchers (`mustEqual`, `mustMatch`, `every`, `oneOf`) |
+| `bat::Mutable` | Provides mutable state containers (`HashMap`) for sharing data between test steps |
+
+---
+
+## Test Structure Keywords
+
+BDD tests are organized using nesting keywords that define groupings, setup phases, and validation steps. Each keyword has specific behavior regarding whether test execution stops on failure.
+
+| Keyword | Purpose | Stops on Failure |
+|---|---|---|
+| `describe` / `scenario` / `suite` | Group related tests together | No -- continues to next test |
+| `given` | Prepare preconditions and test data | Yes -- stops the current group |
+| `when` | Execute side effects (API calls that set up state) | Yes -- stops the current group |
+| `it` / `should` | Validate behavior with assertions | No -- continues to next test |
+| `must` | Validate mandatory behavior with assertions | Yes -- stops the current group |
+| `while` / `until` | Loop execution for polling or retry patterns | Depends on inner block |
+
+### Grouping: describe, scenario, suite
+
+These three keywords are interchangeable. They group related test cases together. If a test within the group fails, the remaining tests in the group still execute.
+
+```dwl
+import * from bat::BDD
+import * from bat::Assertions
+---
+describe("User Management API") in [
+
+  describe("Authentication") in [
+    it must 'accept valid credentials' in [
+      POST `$(config.url)/auth/login` with {
+        body: { "username": "admin", "password": "admin123" }
+      } assert [
+        $.response.status mustEqual 200
+      ]
+    ],
+
+    it should 'reject invalid credentials' in [
+      POST `$(config.url)/auth/login` with {
+        body: { "username": "admin", "password": "wrong" }
+      } assert [
+        $.response.status mustEqual 401
+      ]
+    ]
+  ],
+
+  describe("User CRUD") in [
+    it must 'list all users' in [
+      GET `$(config.url)/api/users` with {} assert [
+        $.response.status mustEqual 200
+      ]
+    ]
+  ]
+]
+```
+
+### Preparation: given
+
+The `given` keyword sets up preconditions. If the `given` block fails, all subsequent steps in the current group are skipped.
+
+```dwl
+suite("Order Processing") in [
+  given 'a valid authentication token' in [
+    POST `$(config.url)/auth/token` with {
+      body: { "client_id": "app1", "client_secret": "secret" }
+    } assert [
+      $.response.status mustEqual 200
+    ]
+  ],
+
+  it must 'create an order' in [
+    POST `$(config.url)/api/orders` with {
+      body: { "product": "widget", "quantity": 5 }
+    } assert [
+      $.response.status mustEqual 201
+    ]
+  ]
+]
+```
+
+### Side Effects: when
+
+The `when` keyword executes operations that produce side effects (like creating resources). If it fails, subsequent steps are skipped.
+
+```dwl
+suite("Resource Lifecycle") in [
+  when 'a new resource is created' in [
+    POST `$(config.url)/api/resources` with {
+      body: { "name": "TestResource" }
+    } assert [
+      $.response.status mustEqual 201
+    ]
+  ],
+
+  it must 'appear in the resource list' in [
+    GET `$(config.url)/api/resources` with {} assert [
+      $.response.status mustEqual 200,
+      $.response.body mustMatch /TestResource/
+    ]
+  ]
+]
+```
+
+### Validation: it, should, must
+
+These keywords define individual test cases.
+
+- **`it should`** / **`should`** -- Non-blocking. If the test fails, the suite continues.
+- **`it must`** / **`must`** -- Blocking. If the test fails, the suite stops.
+
+```dwl
+suite("Health Check") in [
+  // Non-blocking: failure is informational
+  it should 'respond within 500ms' in [
+    GET `$(config.url)/health` with {} assert [
+      $.response.status mustEqual 200
+    ]
+  ],
+
+  // Blocking: failure stops the suite
+  it must 'return valid JSON' in [
+    GET `$(config.url)/health` with {} assert [
+      $.response.status mustEqual 200,
+      $.response.headers."Content-Type" mustEqual "application/json"
+    ]
+  ]
+]
+```
+
+---
+
+## HTTP Methods
+
+BAT supports all standard HTTP methods. Each method takes a URL (as a template string) and a configuration object.
+
+### GET
+
+```dwl
+GET `http://api.example.com/users` with {
+  headers: {
+    "Authorization": "Bearer token123",
+    "Accept": "application/json"
+  }
+}
+```
+
+### POST
+
+```dwl
+POST `http://api.example.com/users` with {
+  headers: {
+    "Content-Type": "application/json",
+    "Authorization": "Bearer token123"
+  },
+  body: {
+    "name": "John Doe",
+    "email": "john@example.com",
+    "role": "admin"
+  }
+}
+```
+
+### PUT
+
+```dwl
+PUT `http://api.example.com/users/42` with {
+  headers: {
+    "Content-Type": "application/json",
+    "Authorization": "Bearer token123"
+  },
+  body: {
+    "name": "John Doe",
+    "email": "john.updated@example.com",
+    "status": "active"
+  }
+}
+```
+
+### PATCH
+
+```dwl
+PATCH `http://api.example.com/users/42` with {
+  headers: {
+    "Content-Type": "application/json",
+    "Authorization": "Bearer token123"
+  },
+  body: {
+    "field": "newValue"
+  }
+}
+```
+
+### DELETE
+
+```dwl
+DELETE `http://api.example.com/users/42` with {
+  headers: {
+    "Authorization": "Bearer token123"
+  }
+}
+```
+
+### HEAD and OPTIONS
+
+```dwl
+// Check headers without retrieving body
+HEAD `http://api.example.com/users` with {} assert [
+  $.response.status mustEqual 200
+]
+
+// Check CORS and allowed methods
+OPTIONS `http://api.example.com/users` with {} assert [
+  $.response.headers."Access-Control-Allow-Methods" mustMatch /GET/
+]
+```
+
+### Request Configuration Object
+
+| Property | Type | Description |
+|---|---|---|
+| `headers` | Object | HTTP request headers as key-value pairs |
+| `body` | Object / String | Request body (automatically serialized to JSON for objects) |
+
+---
+
+## Assertions
+
+Assertions validate the API response. They are defined inside an `assert [...]` block that follows the HTTP request.
+
+### Basic Assertion Syntax
+
+```dwl
+GET `$(config.url)/api/products` with {} assert [
+  $.response.status mustEqual 200,
+  $.response.body.total mustEqual 25,
+  $.response.headers."Content-Type" mustEqual "application/json",
+  $.response.body.name mustMatch /^[A-Za-z ]+$/
+]
+```
+
+### Response Object Properties
+
+| Property | Description | Example |
+|---|---|---|
+| `$.response.status` | HTTP status code | `200`, `404`, `500` |
+| `$.response.body` | Parsed response body | `$.response.body.users[0].name` |
+| `$.response.headers` | Response headers | `$.response.headers."Content-Type"` |
+| `$.response.mime` | Response MIME type | `"application/json"` |
+
+### Assertion Matchers
+
+<AccordionGroup>
+  <Accordion title="mustEqual">
+    Asserts that the actual value is **exactly equal** to the expected value. Works with strings, numbers, booleans, and objects.
+
+    ```dwl
+    assert [
+      $.response.status mustEqual 200,
+      $.response.body.name mustEqual "Widget",
+      $.response.body.active mustEqual true,
+      $.response.body.count mustEqual 42
+    ]
+    ```
+  </Accordion>
+
+  <Accordion title="mustMatch">
+    Asserts that the actual value **matches a regular expression**. The pattern is specified as a DataWeave regex literal.
+
+    ```dwl
+    assert [
+      // Match a UUID pattern
+      $.response.body.id mustMatch /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
+
+      // Match an ISO date
+      $.response.body.createdAt mustMatch /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/,
+
+      // Match a bearer token pattern
+      $.response.body.token mustMatch /^[A-Za-z0-9\-._~+\/]+=*$/,
+
+      // Match an email address
+      $.response.body.email mustMatch /^[\w.+-]+@[\w-]+\.[\w.]+$/
+    ]
+    ```
+  </Accordion>
+
+  <Accordion title="every">
+    Asserts that **every element** in a collection satisfies the given condition.
+
+    ```dwl
+    assert [
+      // Every user in the response must have an id
+      $.response.body.users every ($.id mustMatch /^[0-9]+$/),
+
+      // Every product must have a positive price
+      $.response.body.products every ($.price mustMatch /^[0-9]+\.?[0-9]*$/)
+    ]
+    ```
+  </Accordion>
+
+  <Accordion title="oneOf">
+    Asserts that the actual value is **one of** the specified values.
+
+    ```dwl
+    assert [
+      // Status must be one of the allowed values
+      $.response.body.status oneOf ["active", "pending", "suspended"],
+
+      // HTTP method must be one of the expected methods
+      $.response.body.method oneOf ["GET", "POST"]
+    ]
+    ```
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Conditional Execution
+
+BAT provides keywords for conditionally executing test steps based on runtime conditions.
+
+### assuming
+
+Skips the test if the condition is not met. The test is marked as **skipped** rather than **failed**.
+
+```dwl
+it should 'respond with cached data' assuming (config.cacheEnabled) in [
+  GET `$(config.url)/api/cached-data` with {} assert [
+    $.response.status mustEqual 200,
+    $.response.headers."X-Cache" mustEqual "HIT"
+  ]
+]
+```
+
+### when / whenNot
+
+Conditionally executes a block based on a boolean expression.
+
+```dwl
+suite("Environment-Aware Tests") in [
+  // Only run in production
+  when (config.environment == "production") in [
+    it must 'enforce rate limiting' in [
+      GET `$(config.url)/api/rate-limited` with {} assert [
+        $.response.headers."X-RateLimit-Limit" mustMatch /^[0-9]+$/
+      ]
+    ]
+  ],
+
+  // Skip in production (run everywhere else)
+  whenNot (config.environment == "production") in [
+    it must 'allow unlimited requests in non-prod' in [
+      GET `$(config.url)/api/rate-limited` with {} assert [
+        $.response.status mustEqual 200
+      ]
+    ]
+  ]
+]
+```
+
+---
+
+## Loop Patterns
+
+BAT supports loop keywords for polling or retry scenarios where you need to wait for an asynchronous process to complete.
+
+### do {} while
+
+Repeats the block **while** the condition is true. Useful for polling an endpoint until a condition changes.
+
+```dwl
+import * from bat::BDD
+import * from bat::Assertions
+import * from bat::Mutable
+---
+describe("Async Processing") in [
+
+  var context = HashMap()
+
+  it must 'submit a job' in [
+    POST `$(config.url)/api/jobs` with {
+      body: { "type": "data-export" }
+    } assert [
+      $.response.status mustEqual 202
+    ] execute [
+      context.set('jobId', $.response.body.id)
+    ]
+  ],
+
+  it must 'wait for job completion' in [
+    do {
+      GET `$(config.url)/api/jobs/$(context.get('jobId'))` with {}
+    } while ($.response.body.status == "processing")
+    assert [
+      $.response.body.status mustEqual "completed"
+    ]
+  ]
+]
+```
+
+### do {} until
+
+Repeats the block **until** the condition becomes true. Effectively the inverse of `while`.
+
+```dwl
+it must 'wait for webhook delivery' in [
+  do {
+    GET `$(config.url)/api/webhooks/status/$(context.get('webhookId'))` with {}
+  } until ($.response.body.delivered == true)
+  assert [
+    $.response.body.delivered mustEqual true,
+    $.response.body.attempts mustMatch /^[0-9]+$/
+  ]
+]
+```
+
+---
+
+## State Management with HashMap
+
+By default, DataWeave variables are immutable. The `HashMap` from `bat::Mutable` provides a mutable key-value store that lets you share data between test steps -- such as authentication tokens, resource IDs, and dynamic values.
+
+### Basic Usage
+
+```dwl
+import * from bat::BDD
+import * from bat::Assertions
+import * from bat::Mutable
+---
+describe("Stateful Test") in [
+
+  // Declare a mutable HashMap at the suite level
+  var context = HashMap()
+
+  it must 'login and store the token' in [
+    POST `$(config.url)/api/auth/login` with {
+      headers: { "Content-Type": "application/json" },
+      body: { "username": "testuser", "password": "testpass" }
+    } assert [
+      $.response.status mustEqual 200,
+      $.response.body.access_token mustMatch /^[A-Za-z0-9\-._~+\/]+=*$/
+    ] execute [
+      // Store the token for use in subsequent tests
+      context.set('token', $.response.body.access_token)
+    ]
+  ],
+
+  it must 'use the stored token' in [
+    GET `$(config.url)/api/profile` with {
+      headers: {
+        "Authorization": "Bearer $(context.get('token'))"
+      }
+    } assert [
+      $.response.status mustEqual 200,
+      $.response.body.username mustEqual "testuser"
+    ]
+  ]
+]
+```
+
+### HashMap Operations
+
+| Operation | Description | Example |
+|---|---|---|
+| `context.set(key, value)` | Store a value | `context.set('token', $.response.body.token)` |
+| `context.get(key)` | Retrieve a value | `context.get('token')` |
+
+<Note>
+  The `execute [...]` block runs **after** assertions pass. Use it to extract values from the response and store them in the HashMap for subsequent test steps. If the assertions fail, the `execute` block does not run.
+</Note>
+
+---
+
+## Secrets Management
+
+For sensitive values like API keys, passwords, and tokens, use the `secret()` function instead of hardcoding them in test files. Secrets are configured in `bat.yaml` and injected at runtime.
+
+```dwl
+// Reference a secret by its alias
+var myApiKey = secret('apiKeyAlias')
+var myPassword = secret('dbPasswordAlias')
+---
+suite("Authenticated Tests") in [
+  it must 'authenticate with API key' in [
+    GET `$(config.url)/api/data` with {
+      headers: {
+        "X-API-Key": myApiKey
+      }
+    } assert [
+      $.response.status mustEqual 200
+    ]
+  ]
+]
+```
+
+**bat.yaml configuration:**
+```yaml
+suite:
+  name: "Secure Test Suite"
+files:
+  - file: tests/SecureTests.dwl
+secrets:
+  - name: apiKeyAlias
+    value: ${API_KEY}
+  - name: dbPasswordAlias
+    value: ${DB_PASSWORD}
+```
+
+<Warning>
+  Never hardcode secrets directly in `.dwl` test files. Use the `secret()` function with aliases defined in `bat.yaml`, and inject actual values through environment variables in your CI/CD pipeline.
+</Warning>
+
+---
+
+## Skipping Tests
+
+Prefix any test structure keyword with `x` to skip it. Skipped tests are reported in the output but do not execute.
+
+| Keyword | Skipped Version | Effect |
+|---|---|---|
+| `describe` | `xdescribe` | Skips the entire group and all nested tests |
+| `scenario` | `xscenario` | Skips the entire scenario and all nested tests |
+| `it` | `xit` | Skips a single test case |
+| `should` | `xshould` | Skips a single non-blocking test |
+| `must` | `xmust` | Skips a single blocking test |
+
+```dwl
+suite("Feature Tests") in [
+
+  // This entire group is skipped
+  xdescribe("Work In Progress - New Feature") in [
+    it must 'do something new' in [
+      GET `$(config.url)/api/new-feature` with {} assert [
+        $.response.status mustEqual 200
+      ]
+    ]
+  ],
+
+  describe("Stable Feature") in [
+    it must 'work correctly' in [
+      GET `$(config.url)/api/stable` with {} assert [
+        $.response.status mustEqual 200
+      ]
+    ],
+
+    // Just this one test is skipped
+    xit must 'handle edge case (pending fix)' in [
+      GET `$(config.url)/api/stable?edge=true` with {} assert [
+        $.response.status mustEqual 200
+      ]
+    ]
+  ]
+]
+```
+
+<Tip>
+  Use `x`-prefixed keywords to temporarily disable tests that are under development or waiting for a bug fix. This is preferable to deleting or commenting out tests because skipped tests remain visible in the test report.
+</Tip>
+
+---
+
+## Complete Real-World Example
+
+This example demonstrates a full API integration test suite that authenticates, creates a resource, retrieves it, deletes it, and verifies deletion. It showcases state management, chained requests, and multiple assertion types.
+
+```dwl
+import * from bat::BDD
+import * from bat::Assertions
+import * from bat::Mutable
+---
+describe("API Integration Test Suite") in [
+
+  var context = HashMap()
+
+  // Step 1: Authenticate and obtain an access token
+  it must "authenticate and get access token" in [
+    POST `$(config.url)/api/auth/login` with {
+      headers: { "Content-Type": "application/json" },
+      body: { "username": "testuser", "password": "testpass" }
+    } assert [
+      $.response.status mustEqual 200,
+      $.response.body.access_token mustMatch /^[A-Za-z0-9\-._~+\/]+=*$/
+    ] execute [
+      context.set('token', $.response.body.access_token)
+    ]
+  ],
+
+  // Step 2: Create a new resource using the token
+  it must "create a new resource" in [
+    POST `$(config.url)/api/resources` with {
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer $(context.get('token'))"
+      },
+      body: { "name": "Test Resource", "type": "demo" }
+    } assert [
+      $.response.status mustEqual 201,
+      $.response.body.id mustMatch /^[0-9]+$/
+    ] execute [
+      context.set('resourceId', $.response.body.id)
+    ]
+  ],
+
+  // Step 3: Retrieve the created resource and validate its data
+  it must "retrieve the created resource" in [
+    GET `$(config.url)/api/resources/$(context.get('resourceId'))` with {
+      headers: { "Authorization": "Bearer $(context.get('token'))" }
+    } assert [
+      $.response.status mustEqual 200,
+      $.response.body.name mustEqual "Test Resource"
+    ]
+  ],
+
+  // Step 4: Delete the resource
+  it must "delete the resource" in [
+    DELETE `$(config.url)/api/resources/$(context.get('resourceId'))` with {
+      headers: { "Authorization": "Bearer $(context.get('token'))" }
+    } assert [
+      $.response.status mustEqual 204
+    ]
+  ],
+
+  // Step 5: Verify the resource no longer exists
+  it must "verify resource is deleted" in [
+    GET `$(config.url)/api/resources/$(context.get('resourceId'))` with {
+      headers: { "Authorization": "Bearer $(context.get('token'))" }
+    } assert [
+      $.response.status mustEqual 404
+    ]
+  ]
+]
+```
+
+### What This Test Demonstrates
+
+<CardGroup cols={2}>
+  <Card title="Token-Based Auth Flow" icon="key">
+    Authenticates via POST, extracts the token from the response body, and passes it as a Bearer token in all subsequent requests.
+  </Card>
+  <Card title="State Management" icon="database">
+    Uses `HashMap` to store the access token and resource ID across test steps, enabling chained requests that depend on previous responses.
+  </Card>
+  <Card title="Full CRUD Lifecycle" icon="arrows-rotate">
+    Tests the complete lifecycle of a resource: create (POST 201), read (GET 200), delete (DELETE 204), and verify deletion (GET 404).
+  </Card>
+  <Card title="Multiple Assertion Types" icon="check-double">
+    Combines `mustEqual` for exact value matching and `mustMatch` for regex pattern validation in a single test suite.
+  </Card>
+</CardGroup>
+
+---
+
+## Advanced Patterns
+
+### Chaining Multiple API Calls in a Single Test
+
+```dwl
+it must "create and immediately verify a resource" in [
+  POST `$(config.url)/api/items` with {
+    body: { "name": "Quick Item" }
+  } assert [
+    $.response.status mustEqual 201
+  ] execute [
+    context.set('itemId', $.response.body.id)
+  ]
+  ~> GET `$(config.url)/api/items/$(context.get('itemId'))` with {} assert [
+    $.response.status mustEqual 200,
+    $.response.body.name mustEqual "Quick Item"
+  ]
+]
+```
+
+### Testing Pagination
+
+```dwl
+describe("Pagination") in [
+  it must 'return first page with correct metadata' in [
+    GET `$(config.url)/api/products?page=1&size=10` with {} assert [
+      $.response.status mustEqual 200,
+      $.response.body.page mustEqual 1,
+      $.response.body.size mustEqual 10,
+      $.response.body.items every ($.id mustMatch /^[0-9]+$/)
+    ]
+  ],
+
+  it must 'return second page with offset data' in [
+    GET `$(config.url)/api/products?page=2&size=10` with {} assert [
+      $.response.status mustEqual 200,
+      $.response.body.page mustEqual 2
+    ]
+  ],
+
+  it must 'return empty array for out-of-range page' in [
+    GET `$(config.url)/api/products?page=9999&size=10` with {} assert [
+      $.response.status mustEqual 200,
+      $.response.body.items mustEqual []
+    ]
+  ]
+]
+```
+
+### Testing Error Responses
+
+```dwl
+describe("Error Handling") in [
+  it should 'return 400 for invalid input' in [
+    POST `$(config.url)/api/users` with {
+      body: { "email": "not-an-email" }
+    } assert [
+      $.response.status mustEqual 400,
+      $.response.body.error mustMatch /validation/
+    ]
+  ],
+
+  it should 'return 401 for missing auth' in [
+    GET `$(config.url)/api/protected` with {} assert [
+      $.response.status mustEqual 401
+    ]
+  ],
+
+  it should 'return 404 for non-existent resource' in [
+    GET `$(config.url)/api/users/nonexistent-id-12345` with {
+      headers: { "Authorization": "Bearer $(context.get('token'))" }
+    } assert [
+      $.response.status mustEqual 404,
+      $.response.body.message mustMatch /not found/
+    ]
+  ],
+
+  it should 'return 405 for unsupported method' in [
+    DELETE `$(config.url)/api/read-only-resource` with {
+      headers: { "Authorization": "Bearer $(context.get('token'))" }
+    } assert [
+      $.response.status mustEqual 405
+    ]
+  ]
+]
+```
+
+### Testing Response Time
+
+```dwl
+it should 'respond within acceptable latency' in [
+  GET `$(config.url)/api/health` with {} assert [
+    $.response.status mustEqual 200,
+    $.response.responseTime mustMatch /^[0-9]{1,3}$/  // Under 1000ms
+  ]
+]
+```
+
+---
+
+## Quick Reference
+
+| Category | Syntax | Description |
+|---|---|---|
+| **Import** | `import * from bat::BDD` | Import BDD keywords |
+| **Import** | `import * from bat::Assertions` | Import assertion matchers |
+| **Import** | `import * from bat::Mutable` | Import HashMap for state |
+| **Group** | `describe("name") in [...]` | Group tests (no stop on fail) |
+| **Prepare** | `given 'name' in [...]` | Setup (stops on fail) |
+| **Side Effect** | `when 'name' in [...]` | Execute with side effects (stops on fail) |
+| **Validate** | `it should 'name' in [...]` | Non-blocking assertion |
+| **Validate** | `it must 'name' in [...]` | Blocking assertion (stops on fail) |
+| **Skip** | `xdescribe`, `xit`, `xmust` | Skip test or group |
+| **HTTP** | `GET \`url\` with {config}` | HTTP GET request |
+| **HTTP** | `POST \`url\` with {config}` | HTTP POST request |
+| **Assert** | `mustEqual value` | Exact equality |
+| **Assert** | `mustMatch /regex/` | Regex match |
+| **Assert** | `every (condition)` | All elements match |
+| **Assert** | `oneOf [values]` | Value in set |
+| **State** | `var ctx = HashMap()` | Create mutable store |
+| **State** | `context.set(key, val)` | Store value |
+| **State** | `context.get(key)` | Retrieve value |
+| **Execute** | `execute [...]` | Run after assertions pass |
+| **Secret** | `secret('alias')` | Retrieve a secret value |
+| **Condition** | `assuming (expr)` | Skip if condition is false |
+| **Loop** | `do {...} while (expr)` | Repeat while true |
+| **Loop** | `do {...} until (expr)` | Repeat until true |

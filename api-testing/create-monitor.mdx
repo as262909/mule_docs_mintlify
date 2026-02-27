@@ -1,0 +1,324 @@
+---
+title: "Creating Monitors"
+description: "Set up API monitors with endpoints, assertions, and notifications"
+---
+
+## Overview
+
+API monitors in Anypoint Platform let you schedule automated tests against your API endpoints and receive notifications when something goes wrong. You can create monitors through the **Anypoint Monitoring UI** using a guided form-based workflow, or switch to the **BAT code editor** for programmatic control.
+
+This guide walks through creating a monitor step by step, from initial setup through endpoint configuration and notification channels.
+
+---
+
+## Permission Requirements
+
+Before creating a monitor, ensure your Anypoint Platform account has the required roles assigned.
+
+| Role | Source | Required For |
+|---|---|---|
+| **Anypoint Monitoring Viewer** | Access Management | View monitor results and dashboards |
+| **Anypoint Monitoring Admin** | Access Management | Create, edit, delete, and schedule monitors |
+| **Exchange Viewer** | Access Management | View API specs used in monitors |
+| **Exchange Contributor** | Access Management | Upload monitor test artifacts |
+| **Exchange Admin** | Access Management | Manage published monitor artifacts |
+
+<Warning>
+  You need **both** an Anypoint Monitoring role **and** an Exchange role to create monitors. The Monitoring role controls access to the monitoring UI, while the Exchange role is needed because monitor test suites are stored as Exchange assets.
+</Warning>
+
+---
+
+## Creating a Monitor
+
+<Steps>
+  <Step title="Navigate to API Functional Monitoring">
+    Sign in to [Anypoint Platform](https://anypoint.mulesoft.com). From the left navigation menu, select **Monitoring**, then click the **Functional Monitoring** tab. Click **Create Monitor** to start the wizard.
+  </Step>
+
+  <Step title="Configure Monitor Settings">
+    Set up the basic monitor properties:
+
+    | Setting | Description |
+    |---|---|
+    | **Monitor Name** | A descriptive name for the monitor (e.g., "Production Order API Health Check") |
+    | **Testing Location** | Choose **Public** (MuleSoft cloud infrastructure) or **Private** (your own Mule runtime) |
+    | **Schedule** | How often the monitor runs: every 15 min, 30 min, 1 hour, 6 hours, 12 hours, or 24 hours |
+
+    <Tip>
+      Choose a **public location** for internet-accessible APIs. Use a **private location** for APIs behind firewalls, VPNs, or within corporate networks. Private locations require a registered Mule runtime agent deployed in your network.
+    </Tip>
+  </Step>
+
+  <Step title="Add Endpoints">
+    Configure one or more API endpoints to test. Each endpoint represents a single HTTP request with its own assertions.
+
+    ### Endpoint Configuration
+
+    | Field | Description |
+    |---|---|
+    | **HTTP Method** | `GET`, `POST`, `PUT`, or `PATCH` |
+    | **URL** | The full endpoint URL (e.g., `https://api.example.com/v1/users`) |
+    | **Headers** | Key-value pairs for request headers (e.g., `Authorization: Bearer token123`) |
+    | **Request Body** | JSON or text body for `POST`, `PUT`, and `PATCH` requests |
+    | **SSL Certificate Validation** | Validate the server's SSL certificate (enabled by default) |
+
+    <Note>
+      You can add **multiple endpoints** to a single monitor. Endpoints execute sequentially, so you can chain requests together -- for example, authenticate first, then call a protected endpoint.
+    </Note>
+
+    ### SSL Certificate Validation
+
+    By default, the monitor validates the server's SSL certificate against trusted certificate authorities. This ensures that:
+
+    - The certificate is not expired
+    - The certificate is issued by a trusted CA
+    - The certificate's domain matches the requested URL
+
+    <Tip>
+      If you are testing against an environment that uses **self-signed certificates** (common in development and staging), you can disable SSL validation for that endpoint. This prevents false failures caused by untrusted certificates.
+
+      To disable: toggle off the **Validate SSL Certificate** option in the endpoint configuration.
+    </Tip>
+  </Step>
+
+  <Step title="Add Assertions">
+    Define assertions to validate each endpoint's response. Assertions determine whether the monitor reports a pass or failure.
+
+    ### Available Assertion Types
+
+    | Assertion | Description | Example |
+    |---|---|---|
+    | **Status Code** | Validate the HTTP response code | Status code equals `200` |
+    | **Response Body** | Validate the response body content | Body contains `"status": "healthy"` |
+    | **Response Header** | Validate a specific response header | `Content-Type` equals `application/json` |
+    | **Response Time** | Validate that the response arrives within a time limit | Response time less than `2000ms` |
+
+    ### Example Assertions
+
+    For a health check endpoint:
+
+    ```
+    Status Code    equals    200
+    Response Body  contains  "status":"ok"
+    Response Time  less than 3000ms
+    ```
+
+    For a user creation endpoint:
+
+    ```
+    Status Code    equals    201
+    Response Body  contains  "id"
+    Response Header Content-Type  equals  application/json
+    ```
+
+    <Tip>
+      Use the **Run Now** button to preview the endpoint's response before saving the monitor. This lets you verify that your URL, headers, body, and assertions are correct without waiting for the next scheduled execution.
+    </Tip>
+  </Step>
+
+  <Step title="Configure Notifications">
+    Set up notification channels to alert your team when the monitor detects a failure. You can configure multiple channels for the same monitor.
+
+    ### Notification Channels
+
+    | Channel | Configuration | Description |
+    |---|---|---|
+    | **New Relic** | License Key | Sends monitor results to New Relic as custom events for APM dashboards |
+    | **PagerDuty** | Routing Key | Triggers a PagerDuty incident when the monitor fails, integrates with on-call schedules |
+    | **Slack** | Webhook URL | Posts failure notifications to a Slack channel via an incoming webhook |
+    | **SumoLogic** | HTTP Source Endpoint | Sends results to a SumoLogic HTTP source for log aggregation and analysis |
+    | **Email** | Email Address | Sends failure notifications to one or more email addresses |
+
+    <AccordionGroup>
+      <Accordion title="Slack Notification Setup">
+        1. In your Slack workspace, create an **Incoming Webhook** for the desired channel
+        2. Copy the webhook URL (format: `https://hooks.slack.com/services/T00/B00/xxxxx`)
+        3. In the monitor notification configuration, select **Slack** and paste the webhook URL
+        4. Save the monitor
+
+        Slack notifications include the monitor name, failed endpoint, assertion details, and a link to the full report.
+      </Accordion>
+
+      <Accordion title="PagerDuty Notification Setup">
+        1. In PagerDuty, create a new **Service** or use an existing one
+        2. Add an **Events API v2** integration to the service
+        3. Copy the **Routing Key** (also called Integration Key)
+        4. In the monitor notification configuration, select **PagerDuty** and paste the routing key
+        5. Save the monitor
+
+        PagerDuty incidents are automatically triggered on failure and resolved when the monitor passes again.
+      </Accordion>
+
+      <Accordion title="Email Notification Setup">
+        1. In the monitor notification configuration, select **Email**
+        2. Enter one or more email addresses (comma-separated for multiple recipients)
+        3. Save the monitor
+
+        Email notifications include a summary of which endpoints and assertions failed.
+      </Accordion>
+
+      <Accordion title="New Relic Notification Setup">
+        1. In New Relic, locate your **License Key** under Account Settings > API Keys
+        2. In the monitor notification configuration, select **New Relic** and paste the license key
+        3. Save the monitor
+
+        Results appear in New Relic as custom events that you can query with NRQL and visualize on dashboards.
+      </Accordion>
+
+      <Accordion title="SumoLogic Notification Setup">
+        1. In SumoLogic, create an **HTTP Source** in a Hosted Collector
+        2. Copy the HTTP Source URL
+        3. In the monitor notification configuration, select **SumoLogic** and paste the endpoint URL
+        4. Save the monitor
+
+        Results are ingested as log entries that you can search, analyze, and dashboard in SumoLogic.
+      </Accordion>
+    </AccordionGroup>
+  </Step>
+
+  <Step title="Save and Activate">
+    Review your monitor configuration and click **Create**. The monitor begins executing on its configured schedule immediately.
+
+    After saving, you can:
+    - **View results** in the Functional Monitoring dashboard
+    - **Edit** the monitor to change endpoints, assertions, or notifications
+    - **Pause** the monitor to temporarily stop scheduled executions
+    - **Delete** the monitor when it is no longer needed
+  </Step>
+</Steps>
+
+---
+
+## Switching to the BAT Code Editor
+
+For advanced scenarios, you can switch from the visual form to the **BAT code editor** directly within the monitor creation wizard. This gives you full control over the test logic using the BDD syntax.
+
+<AccordionGroup>
+  <Accordion title="When to Use the Code Editor">
+    The visual form covers the most common monitoring scenarios, but the code editor is better suited for:
+
+    - **Chained requests** that pass data between steps (e.g., login then use the token)
+    - **Complex assertions** that require DataWeave transformations
+    - **Conditional logic** based on response data
+    - **Loop patterns** for polling or retry scenarios
+    - **Multiple assertions per endpoint** with custom error messages
+  </Accordion>
+
+  <Accordion title="How to Switch">
+    1. In the monitor creation or edit wizard, look for the **Switch to Code Editor** link (typically at the top or bottom of the endpoint configuration section)
+    2. Click the link to open the code editor
+    3. The editor displays the current monitor configuration as BDD code
+    4. Modify the code as needed using the [BDD syntax reference](/api-testing/bdd-reference)
+    5. Save the monitor
+
+    <Warning>
+      Switching to the code editor is a **one-way operation** for that monitor. Once you switch to code, you cannot return to the visual form for that monitor. You can always create a new monitor using the visual form if needed.
+    </Warning>
+  </Accordion>
+
+  <Accordion title="Code Editor Example">
+    Here is an example of what the code editor produces for a monitor with two endpoints:
+
+    ```dwl
+    import * from bat::BDD
+    import * from bat::Assertions
+    ---
+    suite("Production Health Monitor") in [
+      it must 'verify API health endpoint' in [
+        GET `https://api.example.com/health` with {
+          headers: { "Accept": "application/json" }
+        } assert [
+          $.response.status mustEqual 200,
+          $.response.body.status mustEqual "healthy"
+        ]
+      ],
+
+      it must 'verify user endpoint returns data' in [
+        GET `https://api.example.com/api/v1/users?limit=1` with {
+          headers: {
+            "Accept": "application/json",
+            "Authorization": "Bearer $(config.apiToken)"
+          }
+        } assert [
+          $.response.status mustEqual 200,
+          $.response.body.users mustMatch /.*id.*/
+        ]
+      ]
+    ]
+    ```
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Monitor Management
+
+Once a monitor is created, you can manage it from the Functional Monitoring dashboard.
+
+### Monitor Actions
+
+| Action | Description |
+|---|---|
+| **View Results** | See the history of monitor executions, including pass/fail status, response times, and assertion details |
+| **Run Now** | Trigger an immediate execution outside the regular schedule |
+| **Edit** | Modify endpoints, assertions, notifications, or schedule |
+| **Pause** | Temporarily suspend scheduled executions without deleting the monitor |
+| **Resume** | Restart scheduled executions for a paused monitor |
+| **Delete** | Permanently remove the monitor and its execution history |
+
+### Understanding Monitor Results
+
+Each monitor execution produces a result that includes:
+
+- **Overall status** -- Pass (all assertions passed) or Fail (one or more assertions failed)
+- **Per-endpoint results** -- Status code, response time, and assertion results for each endpoint
+- **Response details** -- Full response body, headers, and timing information
+- **Failure details** -- For failed assertions, the expected value, actual value, and assertion type
+
+<Note>
+  Monitor execution history is retained for a configurable period. Review results regularly to identify patterns -- intermittent failures may indicate capacity issues, network instability, or flaky dependencies.
+</Note>
+
+---
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Start Simple, Then Expand">
+    Begin with a basic health check monitor that validates a single endpoint returns HTTP 200. Once that is stable, add more endpoints, assertions, and notification channels incrementally.
+  </Accordion>
+
+  <Accordion title="Set Appropriate Schedules">
+    - **Critical APIs:** Every 15 minutes
+    - **Important APIs:** Every 30 minutes to 1 hour
+    - **Non-critical APIs:** Every 6 to 24 hours
+
+    Overly frequent monitoring can create alert fatigue. Match the schedule to the API's business criticality.
+  </Accordion>
+
+  <Accordion title="Use Multiple Notification Channels">
+    Configure at least two notification channels for critical monitors. For example, use Slack for team awareness and PagerDuty for on-call escalation. This ensures failures are noticed even if one channel has issues.
+  </Accordion>
+
+  <Accordion title="Test Non-Production First">
+    Create monitors against your staging or QA environment before production. This lets you validate the monitor's assertions and notifications without risking false alarms in production.
+  </Accordion>
+
+  <Accordion title="Include Response Time Assertions">
+    Do not just check for correct status codes. Add response time assertions to catch performance regressions early. A `200 OK` that takes 30 seconds is still a problem.
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Explore More
+
+<CardGroup cols={2}>
+  <Card title="API Functional Monitoring" icon="radar" href="/api-testing/functional-monitoring">
+    Learn about the BAT CLI, environment configurations, reporters, and CI/CD integration.
+  </Card>
+  <Card title="BDD Test Syntax Reference" icon="code" href="/api-testing/bdd-reference">
+    Complete reference for writing advanced tests with chaining, state management, loops, and conditional execution.
+  </Card>
+</CardGroup>

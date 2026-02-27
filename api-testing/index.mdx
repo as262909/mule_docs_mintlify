@@ -1,0 +1,123 @@
+---
+title: "API Testing"
+description: "Test, monitor, and validate your APIs with MuleSoft"
+---
+
+## Overview
+
+MuleSoft provides a comprehensive set of tools for testing APIs at every stage of the development lifecycle. From unit testing individual Mule flows to monitoring production endpoints on a schedule, the Anypoint Platform ensures that your APIs behave correctly, perform reliably, and meet their design contracts.
+
+A strong API testing strategy combines multiple approaches: verifying logic during development, validating behavior after deployment, and continuously monitoring endpoints in production. MuleSoft's testing tools integrate directly into the Anypoint Platform so that testing is a natural part of the API lifecycle rather than an afterthought.
+
+---
+
+## Testing Tools
+
+<CardGroup cols={3}>
+  <Card title="MUnit" icon="flask-vial" href="/api-testing/munit">
+    The native unit and integration testing framework for Mule applications. Write automated tests in XML or visually in Anypoint Studio, mock processors, assert on payloads and attributes, and generate coverage reports. Integrates with Maven and Surefire for CI/CD pipelines.
+  </Card>
+  <Card title="API Functional Monitoring" icon="radar" href="/api-testing/functional-monitoring">
+    Monitor public and private API endpoints using automated BDD test suites. Define tests with the BAT CLI using DataWeave-based syntax, schedule them to run at regular intervals, and receive notifications through Slack, PagerDuty, email, and more.
+  </Card>
+  <Card title="Mocking Service" icon="clone" href="#">
+    Test API specifications before writing a single line of implementation code. The Mocking Service auto-generates simulated responses from your RAML or OAS spec in Exchange, enabling consumers to validate their integrations against the API contract early in the design phase.
+  </Card>
+</CardGroup>
+
+---
+
+## Testing Types
+
+Understanding the different types of API testing helps you choose the right tool and approach for each stage of development.
+
+<AccordionGroup>
+  <Accordion title="Black Box Testing">
+    Black box testing validates the **overall behavior** of an API by sending real inputs and verifying real outputs. The tester has no knowledge of or dependency on the internal implementation. This approach is ideal for:
+
+    - Verifying that an API conforms to its design specification
+    - Testing end-to-end flows across multiple services
+    - Validating HTTP status codes, response bodies, and headers
+    - Running regression tests after deployments
+
+    **Tools:** API Functional Monitoring (BAT CLI), MUnit integration tests
+
+    ```dwl
+    // Black box test: call the API and validate the response
+    GET `http://api.example.com/products/1` with {} assert [
+      $.response.status mustEqual 200,
+      $.response.body.name mustEqual "Widget"
+    ]
+    ```
+  </Accordion>
+
+  <Accordion title="White Box Testing">
+    White box testing validates the **internal behavior** of individual components by mocking dependencies and isolating the unit under test. The tester has full visibility into the flow's structure and can simulate specific conditions. This approach is ideal for:
+
+    - Testing individual Mule flows and sub-flows in isolation
+    - Mocking HTTP requests, database calls, and connector operations
+    - Simulating error conditions and edge cases
+    - Verifying that specific processors are called with expected parameters
+
+    **Tools:** MUnit (with mocking and spying capabilities)
+
+    ```xml
+    <!-- White box test: mock the database call and test the flow logic -->
+    <munit-tools:mock-when processor="db:select">
+      <munit-tools:with-attributes>
+        <munit-tools:with-attribute attributeName="doc:name" whereValue="Get User"/>
+      </munit-tools:with-attributes>
+      <munit-tools:then-return>
+        <munit-tools:payload value="#[{id: 1, name: 'Test User'}]"/>
+      </munit-tools:then-return>
+    </munit-tools:mock-when>
+    ```
+  </Accordion>
+
+  <Accordion title="Runtime Monitoring">
+    Runtime monitoring ensures that **deployed APIs continue to meet performance and correctness expectations** in production. Monitors run on a repeating schedule and alert teams when an API endpoint returns unexpected results, responds too slowly, or becomes unavailable. This approach is ideal for:
+
+    - Detecting regressions after deployments
+    - Verifying SLA compliance (response time, uptime)
+    - Monitoring third-party API dependencies
+    - Triggering alerts before end users are impacted
+
+    **Tools:** API Functional Monitoring (scheduled monitors), Anypoint Monitoring dashboards
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Choosing the Right Approach
+
+| Stage | Approach | Tool | When to Use |
+|---|---|---|---|
+| **Design** | Contract testing | Mocking Service | Validate API specs before implementation |
+| **Development** | Unit testing | MUnit | Test individual flows with mocked dependencies |
+| **Development** | Integration testing | MUnit | Test flows with real or simulated services |
+| **Pre-deployment** | Functional testing | BAT CLI | Run BDD test suites in CI/CD pipelines |
+| **Post-deployment** | Smoke testing | API Functional Monitoring | Verify endpoints immediately after deploy |
+| **Production** | Continuous monitoring | API Functional Monitoring | Schedule recurring tests with alerting |
+
+<Tip>
+  A mature API testing strategy uses **all three approaches** together. MUnit tests catch issues during development, BAT CLI tests validate behavior in CI/CD, and scheduled monitors detect problems in production before users report them.
+</Tip>
+
+---
+
+## Explore API Testing
+
+<CardGroup cols={2}>
+  <Card title="MUnit Testing Framework" icon="flask-vial" href="/api-testing/munit">
+    Build automated unit and integration tests for Mule applications.
+  </Card>
+  <Card title="API Functional Monitoring" icon="radar" href="/api-testing/functional-monitoring">
+    Monitor API endpoints with automated BDD test suites.
+  </Card>
+  <Card title="BDD Test Syntax Reference" icon="code" href="/api-testing/bdd-reference">
+    Complete reference for writing API tests with BAT BDD syntax.
+  </Card>
+  <Card title="Creating Monitors" icon="plus" href="/api-testing/create-monitor">
+    Set up API monitors with endpoints, assertions, and notifications.
+  </Card>
+</CardGroup>
