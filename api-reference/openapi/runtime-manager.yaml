@@ -1,0 +1,1532 @@
+openapi: 3.0.3
+info:
+  title: MuleSoft Runtime Manager API
+  description: |
+    The MuleSoft Runtime Manager API enables you to manage servers, server groups,
+    clusters, and application deployments in your Anypoint Platform environment.
+
+    All endpoints require the `X-ANYPNT-ENV-ID` and `X-ANYPNT-ORG-ID` headers to
+    identify the target environment and organization.
+  version: v1
+  contact:
+    name: MuleSoft Support
+    url: https://help.mulesoft.com
+
+servers:
+  - url: https://anypoint.mulesoft.com/hybrid/api/v1
+    description: Anypoint Platform (US control plane)
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: Servers
+    description: Manage on-premise Mule runtime servers registered with Runtime Manager.
+  - name: Server Groups
+    description: Organize servers into groups for side-by-side deployments.
+  - name: Clusters
+    description: Manage high-availability clusters of Mule runtime servers.
+  - name: Applications
+    description: Deploy and manage Mule applications on servers, server groups, and clusters.
+
+paths:
+  # ---------------------------------------------------------------------------
+  # Servers
+  # ---------------------------------------------------------------------------
+  /servers:
+    get:
+      operationId: listServers
+      summary: List servers
+      description: Returns a list of all servers registered in the specified environment.
+      tags:
+        - Servers
+      parameters:
+        - $ref: "#/components/parameters/X-ANYPNT-ENV-ID"
+        - $ref: "#/components/parameters/X-ANYPNT-ORG-ID"
+      responses:
+        "200":
+          description: A list of servers.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Server"
+              example:
+                data:
+                  - id: 101
+                    name: mule-server-prod-01
+                    status: RUNNING
+                    muleVersion: "4.6.0"
+                    agentVersion: "2.6.0.1"
+                    addresses:
+                      - ip: "10.0.1.25"
+                        networkInterface: eth0
+                      - ip: "192.168.1.50"
+                        networkInterface: eth1
+                    type: SERVER
+                    serverGroupId: null
+                    clusterId: null
+                  - id: 102
+                    name: mule-server-prod-02
+                    status: RUNNING
+                    muleVersion: "4.6.0"
+                    agentVersion: "2.6.0.1"
+                    addresses:
+                      - ip: "10.0.1.26"
+                        networkInterface: eth0
+                    type: SERVER
+                    serverGroupId: null
+                    clusterId: 501
+                  - id: 103
+                    name: mule-server-staging-01
+                    status: STOPPED
+                    muleVersion: "4.5.2"
+                    agentVersion: "2.5.4.0"
+                    addresses:
+                      - ip: "10.0.2.10"
+                        networkInterface: eth0
+                    type: SERVER
+                    serverGroupId: 301
+                    clusterId: null
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /servers/{serverId}:
+    get:
+      operationId: getServer
+      summary: Get server details
+      description: Returns details for a specific server identified by its ID.
+      tags:
+        - Servers
+      parameters:
+        - $ref: "#/components/parameters/X-ANYPNT-ENV-ID"
+        - $ref: "#/components/parameters/X-ANYPNT-ORG-ID"
+        - $ref: "#/components/parameters/serverId"
+      responses:
+        "200":
+          description: Server details.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Server"
+              example:
+                data:
+                  id: 101
+                  name: mule-server-prod-01
+                  status: RUNNING
+                  muleVersion: "4.6.0"
+                  agentVersion: "2.6.0.1"
+                  addresses:
+                    - ip: "10.0.1.25"
+                      networkInterface: eth0
+                    - ip: "192.168.1.50"
+                      networkInterface: eth1
+                  type: SERVER
+                  serverGroupId: null
+                  clusterId: null
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    put:
+      operationId: renameServer
+      summary: Rename server
+      description: Updates the name of a registered server.
+      tags:
+        - Servers
+      parameters:
+        - $ref: "#/components/parameters/X-ANYPNT-ENV-ID"
+        - $ref: "#/components/parameters/X-ANYPNT-ORG-ID"
+        - $ref: "#/components/parameters/serverId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+                  description: The new name for the server.
+                  example: mule-server-prod-01-renamed
+            example:
+              name: mule-server-prod-01-renamed
+      responses:
+        "200":
+          description: Server renamed successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Server"
+              example:
+                data:
+                  id: 101
+                  name: mule-server-prod-01-renamed
+                  status: RUNNING
+                  muleVersion: "4.6.0"
+                  agentVersion: "2.6.0.1"
+                  addresses:
+                    - ip: "10.0.1.25"
+                      networkInterface: eth0
+                  type: SERVER
+                  serverGroupId: null
+                  clusterId: null
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    delete:
+      operationId: deleteServer
+      summary: Delete server
+      description: Unregisters and removes a server from Runtime Manager.
+      tags:
+        - Servers
+      parameters:
+        - $ref: "#/components/parameters/X-ANYPNT-ENV-ID"
+        - $ref: "#/components/parameters/X-ANYPNT-ORG-ID"
+        - $ref: "#/components/parameters/serverId"
+      responses:
+        "204":
+          description: Server deleted successfully.
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /servers/{serverId}/restart:
+    post:
+      operationId: restartServer
+      summary: Restart server
+      description: Sends a restart command to the specified server.
+      tags:
+        - Servers
+      parameters:
+        - $ref: "#/components/parameters/X-ANYPNT-ENV-ID"
+        - $ref: "#/components/parameters/X-ANYPNT-ORG-ID"
+        - $ref: "#/components/parameters/serverId"
+      responses:
+        "200":
+          description: Restart command sent successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Server"
+              example:
+                data:
+                  id: 101
+                  name: mule-server-prod-01
+                  status: RUNNING
+                  muleVersion: "4.6.0"
+                  agentVersion: "2.6.0.1"
+                  addresses:
+                    - ip: "10.0.1.25"
+                      networkInterface: eth0
+                  type: SERVER
+                  serverGroupId: null
+                  clusterId: null
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /servers/{serverId}/shutdown:
+    post:
+      operationId: shutdownServer
+      summary: Shutdown server
+      description: Sends a shutdown command to the specified server.
+      tags:
+        - Servers
+      parameters:
+        - $ref: "#/components/parameters/X-ANYPNT-ENV-ID"
+        - $ref: "#/components/parameters/X-ANYPNT-ORG-ID"
+        - $ref: "#/components/parameters/serverId"
+      responses:
+        "200":
+          description: Shutdown command sent successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Server"
+              example:
+                data:
+                  id: 101
+                  name: mule-server-prod-01
+                  status: STOPPED
+                  muleVersion: "4.6.0"
+                  agentVersion: "2.6.0.1"
+                  addresses:
+                    - ip: "10.0.1.25"
+                      networkInterface: eth0
+                  type: SERVER
+                  serverGroupId: null
+                  clusterId: null
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ---------------------------------------------------------------------------
+  # Server Groups
+  # ---------------------------------------------------------------------------
+  /serverGroups:
+    post:
+      operationId: createServerGroup
+      summary: Create server group
+      description: Creates a new server group with the specified servers.
+      tags:
+        - Server Groups
+      parameters:
+        - $ref: "#/components/parameters/X-ANYPNT-ENV-ID"
+        - $ref: "#/components/parameters/X-ANYPNT-ORG-ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - serverIds
+              properties:
+                name:
+                  type: string
+                  description: Name of the server group.
+                  example: prod-group-01
+                serverIds:
+                  type: array
+                  items:
+                    type: integer
+                  description: List of server IDs to include in the group.
+                  example: [101, 102]
+            example:
+              name: prod-group-01
+              serverIds: [101, 102]
+      responses:
+        "201":
+          description: Server group created successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/ServerGroup"
+              example:
+                data:
+                  id: 301
+                  name: prod-group-01
+                  servers:
+                    - id: 101
+                      name: mule-server-prod-01
+                      status: RUNNING
+                      muleVersion: "4.6.0"
+                      agentVersion: "2.6.0.1"
+                      addresses:
+                        - ip: "10.0.1.25"
+                          networkInterface: eth0
+                      type: SERVER
+                      serverGroupId: 301
+                      clusterId: null
+                    - id: 102
+                      name: mule-server-prod-02
+                      status: RUNNING
+                      muleVersion: "4.6.0"
+                      agentVersion: "2.6.0.1"
+                      addresses:
+                        - ip: "10.0.1.26"
+                          networkInterface: eth0
+                      type: SERVER
+                      serverGroupId: 301
+                      clusterId: null
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+    get:
+      operationId: listServerGroups
+      summary: List server groups
+      description: Returns a list of all server groups in the specified environment.
+      tags:
+        - Server Groups
+      parameters:
+        - $ref: "#/components/parameters/X-ANYPNT-ENV-ID"
+        - $ref: "#/components/parameters/X-ANYPNT-ORG-ID"
+      responses:
+        "200":
+          description: A list of server groups.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ServerGroup"
+              example:
+                data:
+                  - id: 301
+                    name: prod-group-01
+                    servers:
+                      - id: 101
+                        name: mule-server-prod-01
+                        status: RUNNING
+                        muleVersion: "4.6.0"
+                        agentVersion: "2.6.0.1"
+                        addresses:
+                          - ip: "10.0.1.25"
+                            networkInterface: eth0
+                        type: SERVER
+                        serverGroupId: 301
+                        clusterId: null
+                      - id: 102
+                        name: mule-server-prod-02
+                        status: RUNNING
+                        muleVersion: "4.6.0"
+                        agentVersion: "2.6.0.1"
+                        addresses:
+                          - ip: "10.0.1.26"
+                            networkInterface: eth0
+                        type: SERVER
+                        serverGroupId: 301
+                        clusterId: null
+                  - id: 302
+                    name: staging-group-01
+                    servers:
+                      - id: 103
+                        name: mule-server-staging-01
+                        status: RUNNING
+                        muleVersion: "4.5.2"
+                        agentVersion: "2.5.4.0"
+                        addresses:
+                          - ip: "10.0.2.10"
+                            networkInterface: eth0
+                        type: SERVER
+                        serverGroupId: 302
+                        clusterId: null
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /serverGroups/{groupId}:
+    get:
+      operationId: getServerGroup
+      summary: Get server group
+      description: Returns details for a specific server group.
+      tags:
+        - Server Groups
+      parameters:
+        - $ref: "#/components/parameters/X-ANYPNT-ENV-ID"
+        - $ref: "#/components/parameters/X-ANYPNT-ORG-ID"
+        - $ref: "#/components/parameters/groupId"
+      responses:
+        "200":
+          description: Server group details.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/ServerGroup"
+              example:
+                data:
+                  id: 301
+                  name: prod-group-01
+                  servers:
+                    - id: 101
+                      name: mule-server-prod-01
+                      status: RUNNING
+                      muleVersion: "4.6.0"
+                      agentVersion: "2.6.0.1"
+                      addresses:
+                        - ip: "10.0.1.25"
+                          networkInterface: eth0
+                      type: SERVER
+                      serverGroupId: 301
+                      clusterId: null
+                    - id: 102
+                      name: mule-server-prod-02
+                      status: RUNNING
+                      muleVersion: "4.6.0"
+                      agentVersion: "2.6.0.1"
+                      addresses:
+                        - ip: "10.0.1.26"
+                          networkInterface: eth0
+                      type: SERVER
+                      serverGroupId: 301
+                      clusterId: null
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    put:
+      operationId: renameServerGroup
+      summary: Rename server group
+      description: Updates the name of a server group.
+      tags:
+        - Server Groups
+      parameters:
+        - $ref: "#/components/parameters/X-ANYPNT-ENV-ID"
+        - $ref: "#/components/parameters/X-ANYPNT-ORG-ID"
+        - $ref: "#/components/parameters/groupId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+                  description: The new name for the server group.
+                  example: prod-group-01-updated
+            example:
+              name: prod-group-01-updated
+      responses:
+        "200":
+          description: Server group renamed successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/ServerGroup"
+              example:
+                data:
+                  id: 301
+                  name: prod-group-01-updated
+                  servers:
+                    - id: 101
+                      name: mule-server-prod-01
+                      status: RUNNING
+                      muleVersion: "4.6.0"
+                      agentVersion: "2.6.0.1"
+                      addresses:
+                        - ip: "10.0.1.25"
+                          networkInterface: eth0
+                      type: SERVER
+                      serverGroupId: 301
+                      clusterId: null
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    delete:
+      operationId: deleteServerGroup
+      summary: Delete server group
+      description: Deletes a server group. Servers in the group are released but not deleted.
+      tags:
+        - Server Groups
+      parameters:
+        - $ref: "#/components/parameters/X-ANYPNT-ENV-ID"
+        - $ref: "#/components/parameters/X-ANYPNT-ORG-ID"
+        - $ref: "#/components/parameters/groupId"
+      responses:
+        "204":
+          description: Server group deleted successfully.
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /serverGroups/{groupId}/servers/{serverId}:
+    post:
+      operationId: addServerToGroup
+      summary: Add server to group
+      description: Adds an existing server to a server group.
+      tags:
+        - Server Groups
+      parameters:
+        - $ref: "#/components/parameters/X-ANYPNT-ENV-ID"
+        - $ref: "#/components/parameters/X-ANYPNT-ORG-ID"
+        - $ref: "#/components/parameters/groupId"
+        - $ref: "#/components/parameters/serverId"
+      responses:
+        "200":
+          description: Server added to group successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/ServerGroup"
+              example:
+                data:
+                  id: 301
+                  name: prod-group-01
+                  servers:
+                    - id: 101
+                      name: mule-server-prod-01
+                      status: RUNNING
+                      muleVersion: "4.6.0"
+                      agentVersion: "2.6.0.1"
+                      addresses:
+                        - ip: "10.0.1.25"
+                          networkInterface: eth0
+                      type: SERVER
+                      serverGroupId: 301
+                      clusterId: null
+                    - id: 102
+                      name: mule-server-prod-02
+                      status: RUNNING
+                      muleVersion: "4.6.0"
+                      agentVersion: "2.6.0.1"
+                      addresses:
+                        - ip: "10.0.1.26"
+                          networkInterface: eth0
+                      type: SERVER
+                      serverGroupId: 301
+                      clusterId: null
+                    - id: 104
+                      name: mule-server-prod-03
+                      status: RUNNING
+                      muleVersion: "4.6.0"
+                      agentVersion: "2.6.0.1"
+                      addresses:
+                        - ip: "10.0.1.27"
+                          networkInterface: eth0
+                      type: SERVER
+                      serverGroupId: 301
+                      clusterId: null
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    delete:
+      operationId: removeServerFromGroup
+      summary: Remove server from group
+      description: Removes a server from a server group without deleting the server.
+      tags:
+        - Server Groups
+      parameters:
+        - $ref: "#/components/parameters/X-ANYPNT-ENV-ID"
+        - $ref: "#/components/parameters/X-ANYPNT-ORG-ID"
+        - $ref: "#/components/parameters/groupId"
+        - $ref: "#/components/parameters/serverId"
+      responses:
+        "204":
+          description: Server removed from group successfully.
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ---------------------------------------------------------------------------
+  # Clusters
+  # ---------------------------------------------------------------------------
+  /clusters:
+    post:
+      operationId: createCluster
+      summary: Create cluster
+      description: Creates a new cluster from the specified servers.
+      tags:
+        - Clusters
+      parameters:
+        - $ref: "#/components/parameters/X-ANYPNT-ENV-ID"
+        - $ref: "#/components/parameters/X-ANYPNT-ORG-ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - multicastEnabled
+                - servers
+              properties:
+                name:
+                  type: string
+                  description: Name of the cluster.
+                  example: prod-cluster-01
+                multicastEnabled:
+                  type: boolean
+                  description: Whether multicast discovery is enabled. When false, unicast is used and serverIp is required for each server.
+                  example: false
+                servers:
+                  type: array
+                  items:
+                    type: object
+                    required:
+                      - serverId
+                      - serverIp
+                    properties:
+                      serverId:
+                        type: integer
+                        description: ID of the server to include in the cluster.
+                        example: 101
+                      serverIp:
+                        type: string
+                        description: IP address of the server used for cluster communication.
+                        example: "10.0.1.25"
+                  description: List of servers to include in the cluster.
+            example:
+              name: prod-cluster-01
+              multicastEnabled: false
+              servers:
+                - serverId: 101
+                  serverIp: "10.0.1.25"
+                - serverId: 102
+                  serverIp: "10.0.1.26"
+      responses:
+        "201":
+          description: Cluster created successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Cluster"
+              example:
+                data:
+                  id: 501
+                  name: prod-cluster-01
+                  multicastEnabled: false
+                  status: RUNNING
+                  servers:
+                    - id: 101
+                      name: mule-server-prod-01
+                      status: RUNNING
+                      muleVersion: "4.6.0"
+                      agentVersion: "2.6.0.1"
+                      addresses:
+                        - ip: "10.0.1.25"
+                          networkInterface: eth0
+                      type: SERVER
+                      serverGroupId: null
+                      clusterId: 501
+                    - id: 102
+                      name: mule-server-prod-02
+                      status: RUNNING
+                      muleVersion: "4.6.0"
+                      agentVersion: "2.6.0.1"
+                      addresses:
+                        - ip: "10.0.1.26"
+                          networkInterface: eth0
+                      type: SERVER
+                      serverGroupId: null
+                      clusterId: 501
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+    get:
+      operationId: listClusters
+      summary: List clusters
+      description: Returns a list of all clusters in the specified environment.
+      tags:
+        - Clusters
+      parameters:
+        - $ref: "#/components/parameters/X-ANYPNT-ENV-ID"
+        - $ref: "#/components/parameters/X-ANYPNT-ORG-ID"
+      responses:
+        "200":
+          description: A list of clusters.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Cluster"
+              example:
+                data:
+                  - id: 501
+                    name: prod-cluster-01
+                    multicastEnabled: false
+                    status: RUNNING
+                    servers:
+                      - id: 101
+                        name: mule-server-prod-01
+                        status: RUNNING
+                        muleVersion: "4.6.0"
+                        agentVersion: "2.6.0.1"
+                        addresses:
+                          - ip: "10.0.1.25"
+                            networkInterface: eth0
+                        type: SERVER
+                        serverGroupId: null
+                        clusterId: 501
+                      - id: 102
+                        name: mule-server-prod-02
+                        status: RUNNING
+                        muleVersion: "4.6.0"
+                        agentVersion: "2.6.0.1"
+                        addresses:
+                          - ip: "10.0.1.26"
+                            networkInterface: eth0
+                        type: SERVER
+                        serverGroupId: null
+                        clusterId: 501
+                  - id: 502
+                    name: staging-cluster-01
+                    multicastEnabled: true
+                    status: RUNNING
+                    servers:
+                      - id: 103
+                        name: mule-server-staging-01
+                        status: RUNNING
+                        muleVersion: "4.5.2"
+                        agentVersion: "2.5.4.0"
+                        addresses:
+                          - ip: "10.0.2.10"
+                            networkInterface: eth0
+                        type: SERVER
+                        serverGroupId: null
+                        clusterId: 502
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /clusters/{clusterId}:
+    get:
+      operationId: getCluster
+      summary: Get cluster
+      description: Returns details for a specific cluster.
+      tags:
+        - Clusters
+      parameters:
+        - $ref: "#/components/parameters/X-ANYPNT-ENV-ID"
+        - $ref: "#/components/parameters/X-ANYPNT-ORG-ID"
+        - $ref: "#/components/parameters/clusterId"
+      responses:
+        "200":
+          description: Cluster details.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Cluster"
+              example:
+                data:
+                  id: 501
+                  name: prod-cluster-01
+                  multicastEnabled: false
+                  status: RUNNING
+                  servers:
+                    - id: 101
+                      name: mule-server-prod-01
+                      status: RUNNING
+                      muleVersion: "4.6.0"
+                      agentVersion: "2.6.0.1"
+                      addresses:
+                        - ip: "10.0.1.25"
+                          networkInterface: eth0
+                      type: SERVER
+                      serverGroupId: null
+                      clusterId: 501
+                    - id: 102
+                      name: mule-server-prod-02
+                      status: RUNNING
+                      muleVersion: "4.6.0"
+                      agentVersion: "2.6.0.1"
+                      addresses:
+                        - ip: "10.0.1.26"
+                          networkInterface: eth0
+                      type: SERVER
+                      serverGroupId: null
+                      clusterId: 501
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    put:
+      operationId: updateCluster
+      summary: Update cluster
+      description: Updates the cluster name and/or server membership.
+      tags:
+        - Clusters
+      parameters:
+        - $ref: "#/components/parameters/X-ANYPNT-ENV-ID"
+        - $ref: "#/components/parameters/X-ANYPNT-ORG-ID"
+        - $ref: "#/components/parameters/clusterId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - servers
+              properties:
+                name:
+                  type: string
+                  description: The new name for the cluster.
+                  example: prod-cluster-01-updated
+                servers:
+                  type: array
+                  items:
+                    type: object
+                    required:
+                      - serverId
+                      - serverIp
+                    properties:
+                      serverId:
+                        type: integer
+                        description: ID of the server.
+                        example: 101
+                      serverIp:
+                        type: string
+                        description: IP address of the server used for cluster communication.
+                        example: "10.0.1.25"
+                  description: Updated list of servers in the cluster.
+            example:
+              name: prod-cluster-01-updated
+              servers:
+                - serverId: 101
+                  serverIp: "10.0.1.25"
+                - serverId: 102
+                  serverIp: "10.0.1.26"
+                - serverId: 104
+                  serverIp: "10.0.1.27"
+      responses:
+        "200":
+          description: Cluster updated successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Cluster"
+              example:
+                data:
+                  id: 501
+                  name: prod-cluster-01-updated
+                  multicastEnabled: false
+                  status: RUNNING
+                  servers:
+                    - id: 101
+                      name: mule-server-prod-01
+                      status: RUNNING
+                      muleVersion: "4.6.0"
+                      agentVersion: "2.6.0.1"
+                      addresses:
+                        - ip: "10.0.1.25"
+                          networkInterface: eth0
+                      type: SERVER
+                      serverGroupId: null
+                      clusterId: 501
+                    - id: 102
+                      name: mule-server-prod-02
+                      status: RUNNING
+                      muleVersion: "4.6.0"
+                      agentVersion: "2.6.0.1"
+                      addresses:
+                        - ip: "10.0.1.26"
+                          networkInterface: eth0
+                      type: SERVER
+                      serverGroupId: null
+                      clusterId: 501
+                    - id: 104
+                      name: mule-server-prod-03
+                      status: RUNNING
+                      muleVersion: "4.6.0"
+                      agentVersion: "2.6.0.1"
+                      addresses:
+                        - ip: "10.0.1.27"
+                          networkInterface: eth0
+                      type: SERVER
+                      serverGroupId: null
+                      clusterId: 501
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    delete:
+      operationId: deleteCluster
+      summary: Delete cluster
+      description: Deletes a cluster. Servers in the cluster are released but not deleted.
+      tags:
+        - Clusters
+      parameters:
+        - $ref: "#/components/parameters/X-ANYPNT-ENV-ID"
+        - $ref: "#/components/parameters/X-ANYPNT-ORG-ID"
+        - $ref: "#/components/parameters/clusterId"
+      responses:
+        "204":
+          description: Cluster deleted successfully.
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ---------------------------------------------------------------------------
+  # Applications
+  # ---------------------------------------------------------------------------
+  /applications:
+    get:
+      operationId: listApplications
+      summary: List applications
+      description: Returns a list of all deployed applications in the specified environment.
+      tags:
+        - Applications
+      parameters:
+        - $ref: "#/components/parameters/X-ANYPNT-ENV-ID"
+        - $ref: "#/components/parameters/X-ANYPNT-ORG-ID"
+      responses:
+        "200":
+          description: A list of applications.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Application"
+              example:
+                data:
+                  - id: 1001
+                    name: order-process-app
+                    status: STARTED
+                    desiredStatus: STARTED
+                    artifact:
+                      name: order-process-app
+                      fileName: order-process-app-1.2.0.jar
+                    target:
+                      id: 501
+                      name: prod-cluster-01
+                      type: CLUSTER
+                    lastReportedStatus: STARTED
+                  - id: 1002
+                    name: inventory-sync-app
+                    status: STARTED
+                    desiredStatus: STARTED
+                    artifact:
+                      name: inventory-sync-app
+                      fileName: inventory-sync-app-2.0.1.jar
+                    target:
+                      id: 301
+                      name: prod-group-01
+                      type: SERVER_GROUP
+                    lastReportedStatus: STARTED
+                  - id: 1003
+                    name: notification-service-app
+                    status: DEPLOYING
+                    desiredStatus: STARTED
+                    artifact:
+                      name: notification-service-app
+                      fileName: notification-service-app-1.0.0.jar
+                    target:
+                      id: 101
+                      name: mule-server-prod-01
+                      type: SERVER
+                    lastReportedStatus: DEPLOYING
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+    post:
+      operationId: deployApplication
+      summary: Deploy application
+      description: Deploys a new Mule application to a target server, server group, or cluster.
+      tags:
+        - Applications
+      parameters:
+        - $ref: "#/components/parameters/X-ANYPNT-ENV-ID"
+        - $ref: "#/components/parameters/X-ANYPNT-ORG-ID"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - targetId
+                - artifactName
+                - file
+              properties:
+                targetId:
+                  type: string
+                  description: The ID of the target server, server group, or cluster.
+                  example: "501"
+                artifactName:
+                  type: string
+                  description: The name for the deployed application.
+                  example: order-process-app
+                file:
+                  type: string
+                  format: binary
+                  description: The Mule application JAR file to deploy.
+      responses:
+        "201":
+          description: Application deployment initiated.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Application"
+              example:
+                data:
+                  id: 1004
+                  name: order-process-app
+                  status: DEPLOYING
+                  desiredStatus: STARTED
+                  artifact:
+                    name: order-process-app
+                    fileName: order-process-app-1.3.0.jar
+                  target:
+                    id: 501
+                    name: prod-cluster-01
+                    type: CLUSTER
+                  lastReportedStatus: DEPLOYING
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /applications/{appId}:
+    get:
+      operationId: getApplication
+      summary: Get application details
+      description: Returns details for a specific deployed application.
+      tags:
+        - Applications
+      parameters:
+        - $ref: "#/components/parameters/X-ANYPNT-ENV-ID"
+        - $ref: "#/components/parameters/X-ANYPNT-ORG-ID"
+        - $ref: "#/components/parameters/appId"
+      responses:
+        "200":
+          description: Application details.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Application"
+              example:
+                data:
+                  id: 1001
+                  name: order-process-app
+                  status: STARTED
+                  desiredStatus: STARTED
+                  artifact:
+                    name: order-process-app
+                    fileName: order-process-app-1.2.0.jar
+                  target:
+                    id: 501
+                    name: prod-cluster-01
+                    type: CLUSTER
+                  lastReportedStatus: STARTED
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    put:
+      operationId: redeployApplication
+      summary: Redeploy application
+      description: Redeploys an existing application with a new artifact.
+      tags:
+        - Applications
+      parameters:
+        - $ref: "#/components/parameters/X-ANYPNT-ENV-ID"
+        - $ref: "#/components/parameters/X-ANYPNT-ORG-ID"
+        - $ref: "#/components/parameters/appId"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - artifactName
+                - file
+              properties:
+                artifactName:
+                  type: string
+                  description: The updated name for the application artifact.
+                  example: order-process-app
+                file:
+                  type: string
+                  format: binary
+                  description: The new Mule application JAR file to deploy.
+      responses:
+        "200":
+          description: Application redeployment initiated.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Application"
+              example:
+                data:
+                  id: 1001
+                  name: order-process-app
+                  status: DEPLOYING
+                  desiredStatus: STARTED
+                  artifact:
+                    name: order-process-app
+                    fileName: order-process-app-1.3.0.jar
+                  target:
+                    id: 501
+                    name: prod-cluster-01
+                    type: CLUSTER
+                  lastReportedStatus: DEPLOYING
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    delete:
+      operationId: undeployApplication
+      summary: Undeploy application
+      description: Undeploys and removes an application from its target.
+      tags:
+        - Applications
+      parameters:
+        - $ref: "#/components/parameters/X-ANYPNT-ENV-ID"
+        - $ref: "#/components/parameters/X-ANYPNT-ORG-ID"
+        - $ref: "#/components/parameters/appId"
+      responses:
+        "204":
+          description: Application undeployed successfully.
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+# =============================================================================
+# Components
+# =============================================================================
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        Obtain an access token from the Anypoint Platform authentication endpoint
+        and include it as a Bearer token in the Authorization header.
+
+  parameters:
+    X-ANYPNT-ENV-ID:
+      name: X-ANYPNT-ENV-ID
+      in: header
+      required: true
+      description: The ID of the Anypoint Platform environment.
+      schema:
+        type: string
+      example: "e7d09fd0-2c5a-4be3-b02e-1a2b3c4d5e6f"
+
+    X-ANYPNT-ORG-ID:
+      name: X-ANYPNT-ORG-ID
+      in: header
+      required: true
+      description: The ID of the Anypoint Platform organization.
+      schema:
+        type: string
+      example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+
+    serverId:
+      name: serverId
+      in: path
+      required: true
+      description: The unique identifier of the server.
+      schema:
+        type: integer
+      example: 101
+
+    groupId:
+      name: groupId
+      in: path
+      required: true
+      description: The unique identifier of the server group.
+      schema:
+        type: integer
+      example: 301
+
+    clusterId:
+      name: clusterId
+      in: path
+      required: true
+      description: The unique identifier of the cluster.
+      schema:
+        type: integer
+      example: 501
+
+    appId:
+      name: appId
+      in: path
+      required: true
+      description: The unique identifier of the application.
+      schema:
+        type: integer
+      example: 1001
+
+  schemas:
+    Address:
+      type: object
+      description: A network address bound to a server.
+      properties:
+        ip:
+          type: string
+          description: The IP address.
+          example: "10.0.1.25"
+        networkInterface:
+          type: string
+          description: The name of the network interface.
+          example: eth0
+
+    Server:
+      type: object
+      description: A Mule runtime server registered with Runtime Manager.
+      properties:
+        id:
+          type: integer
+          description: Unique identifier of the server.
+          example: 101
+        name:
+          type: string
+          description: Display name of the server.
+          example: mule-server-prod-01
+        status:
+          type: string
+          description: Current status of the server.
+          enum:
+            - RUNNING
+            - STOPPED
+            - DISCONNECTED
+          example: RUNNING
+        muleVersion:
+          type: string
+          description: Version of the Mule runtime installed on the server.
+          example: "4.6.0"
+        agentVersion:
+          type: string
+          description: Version of the Runtime Manager agent installed on the server.
+          example: "2.6.0.1"
+        addresses:
+          type: array
+          description: Network addresses bound to the server.
+          items:
+            $ref: "#/components/schemas/Address"
+        type:
+          type: string
+          description: The type of the runtime target. Always "SERVER" for individual servers.
+          enum:
+            - SERVER
+          example: SERVER
+        serverGroupId:
+          type: integer
+          nullable: true
+          description: The ID of the server group this server belongs to, or null if not in a group.
+          example: null
+        clusterId:
+          type: integer
+          nullable: true
+          description: The ID of the cluster this server belongs to, or null if not in a cluster.
+          example: null
+
+    ServerGroup:
+      type: object
+      description: A group of Mule runtime servers for side-by-side deployment.
+      properties:
+        id:
+          type: integer
+          description: Unique identifier of the server group.
+          example: 301
+        name:
+          type: string
+          description: Display name of the server group.
+          example: prod-group-01
+        servers:
+          type: array
+          description: The servers that belong to this group.
+          items:
+            $ref: "#/components/schemas/Server"
+
+    Cluster:
+      type: object
+      description: A high-availability cluster of Mule runtime servers.
+      properties:
+        id:
+          type: integer
+          description: Unique identifier of the cluster.
+          example: 501
+        name:
+          type: string
+          description: Display name of the cluster.
+          example: prod-cluster-01
+        multicastEnabled:
+          type: boolean
+          description: Whether multicast discovery is enabled for the cluster.
+          example: false
+        status:
+          type: string
+          description: Current status of the cluster.
+          enum:
+            - RUNNING
+            - STOPPED
+            - DISCONNECTED
+          example: RUNNING
+        servers:
+          type: array
+          description: The servers that belong to this cluster.
+          items:
+            $ref: "#/components/schemas/Server"
+
+    Artifact:
+      type: object
+      description: The deployed application artifact.
+      properties:
+        name:
+          type: string
+          description: Name of the artifact.
+          example: order-process-app
+        fileName:
+          type: string
+          description: File name of the deployed JAR.
+          example: order-process-app-1.2.0.jar
+
+    Target:
+      type: object
+      description: The deployment target (server, server group, or cluster).
+      properties:
+        id:
+          type: integer
+          description: Unique identifier of the target.
+          example: 501
+        name:
+          type: string
+          description: Display name of the target.
+          example: prod-cluster-01
+        type:
+          type: string
+          description: The type of the deployment target.
+          enum:
+            - SERVER
+            - SERVER_GROUP
+            - CLUSTER
+          example: CLUSTER
+
+    Application:
+      type: object
+      description: A Mule application deployed via Runtime Manager.
+      properties:
+        id:
+          type: integer
+          description: Unique identifier of the application.
+          example: 1001
+        name:
+          type: string
+          description: Name of the deployed application.
+          example: order-process-app
+        status:
+          type: string
+          description: Current status of the application.
+          enum:
+            - STARTED
+            - STOPPED
+            - DEPLOYING
+          example: STARTED
+        desiredStatus:
+          type: string
+          description: The desired target status of the application.
+          enum:
+            - STARTED
+            - STOPPED
+          example: STARTED
+        artifact:
+          $ref: "#/components/schemas/Artifact"
+        target:
+          $ref: "#/components/schemas/Target"
+        lastReportedStatus:
+          type: string
+          description: The last status reported by the runtime agent.
+          enum:
+            - STARTED
+            - STOPPED
+            - DEPLOYING
+          example: STARTED
+
+    Error:
+      type: object
+      description: Error response body.
+      properties:
+        status:
+          type: integer
+          description: HTTP status code.
+          example: 404
+        message:
+          type: string
+          description: Human-readable error message.
+          example: "Resource not found"
+
+  responses:
+    BadRequest:
+      description: The request was invalid or malformed.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            status: 400
+            message: "Invalid request: missing required field 'name'"
+
+    Unauthorized:
+      description: Authentication credentials are missing or invalid.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            status: 401
+            message: "Unauthorized: invalid or expired access token"
+
+    NotFound:
+      description: The requested resource was not found.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            status: 404
+            message: "Resource not found"

@@ -12,6 +12,12 @@
     "dark": "/logo/dark.svg"
   },
   "favicon": "/favicon.svg",
+  "openapi": [
+    "api-reference/openapi/greeting-api.yaml",
+    "api-reference/openapi/api-platform.yaml",
+    "api-reference/openapi/api-manager.yaml",
+    "api-reference/openapi/runtime-manager.yaml"
+  ],
   "rounded": "default",
   "font": {
     "headings": {
@@ -139,18 +145,103 @@
         "tab": "API Reference",
         "groups": [
           {
-            "group": "API Reference",
+            "group": "Overview",
             "pages": [
-              "api-reference/introduction",
-              "api-reference/api-platform",
-              "api-reference/api-manager",
-              "api-reference/runtime-manager"
+              "api-reference/introduction"
             ]
           },
           {
-            "group": "API Playground",
+            "group": "Greeting API",
             "pages": [
               "api-reference/playground"
+            ]
+          },
+          {
+            "group": "API Platform — APIs",
+            "pages": [
+              "api-reference/platform/list-apis",
+              "api-reference/platform/create-api",
+              "api-reference/platform/get-api",
+              "api-reference/platform/update-api",
+              "api-reference/platform/delete-api"
+            ]
+          },
+          {
+            "group": "API Platform — Versions",
+            "pages": [
+              "api-reference/platform/list-versions",
+              "api-reference/platform/get-version",
+              "api-reference/platform/update-version",
+              "api-reference/platform/classify-version"
+            ]
+          },
+          {
+            "group": "API Platform — Contracts",
+            "pages": [
+              "api-reference/platform/list-contracts",
+              "api-reference/platform/revoke-contract",
+              "api-reference/platform/list-public-apis"
+            ]
+          },
+          {
+            "group": "API Manager — Instances",
+            "pages": [
+              "api-reference/manager/create-instance",
+              "api-reference/manager/list-instances",
+              "api-reference/manager/get-instance",
+              "api-reference/manager/delete-instance"
+            ]
+          },
+          {
+            "group": "API Manager — Deployments & Policies",
+            "pages": [
+              "api-reference/manager/deploy-proxy",
+              "api-reference/manager/apply-policy",
+              "api-reference/manager/list-policies",
+              "api-reference/manager/remove-policy"
+            ]
+          },
+          {
+            "group": "Runtime Manager — Servers",
+            "pages": [
+              "api-reference/runtime/list-servers",
+              "api-reference/runtime/get-server",
+              "api-reference/runtime/rename-server",
+              "api-reference/runtime/delete-server",
+              "api-reference/runtime/restart-server",
+              "api-reference/runtime/shutdown-server"
+            ]
+          },
+          {
+            "group": "Runtime Manager — Server Groups",
+            "pages": [
+              "api-reference/runtime/create-group",
+              "api-reference/runtime/list-groups",
+              "api-reference/runtime/get-group",
+              "api-reference/runtime/rename-group",
+              "api-reference/runtime/add-server-to-group",
+              "api-reference/runtime/remove-server-from-group",
+              "api-reference/runtime/delete-group"
+            ]
+          },
+          {
+            "group": "Runtime Manager — Clusters",
+            "pages": [
+              "api-reference/runtime/create-cluster",
+              "api-reference/runtime/list-clusters",
+              "api-reference/runtime/get-cluster",
+              "api-reference/runtime/update-cluster",
+              "api-reference/runtime/delete-cluster"
+            ]
+          },
+          {
+            "group": "Runtime Manager — Applications",
+            "pages": [
+              "api-reference/runtime/list-apps",
+              "api-reference/runtime/deploy-app",
+              "api-reference/runtime/get-app",
+              "api-reference/runtime/redeploy-app",
+              "api-reference/runtime/undeploy-app"
             ]
           }
         ]

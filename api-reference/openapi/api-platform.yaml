@@ -1,0 +1,1157 @@
+openapi: 3.0.3
+info:
+  title: MuleSoft API Platform API
+  description: |
+    The MuleSoft API Platform API v2 provides programmatic access to manage APIs,
+    API versions, contracts, and classifications within the Anypoint Platform.
+
+    Use this API to automate API lifecycle management tasks such as creating and
+    updating API definitions, managing version metadata, classifying APIs into
+    environments, and administering application contracts.
+  version: "2.0.0"
+  contact:
+    name: MuleSoft Support
+    url: https://help.mulesoft.com
+  license:
+    name: MuleSoft Terms of Service
+    url: https://www.mulesoft.com/legal/terms
+
+servers:
+  - url: https://anypoint.mulesoft.com/apiplatform/repository/v2
+    description: Anypoint Platform (US Control Plane)
+  - url: https://eu1.anypoint.mulesoft.com/apiplatform/repository/v2
+    description: Anypoint Platform (EU Control Plane)
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: APIs
+    description: Manage API definitions within an organization
+  - name: Versions
+    description: Manage API version metadata
+  - name: Classification
+    description: Classify API versions into environments
+  - name: Contracts
+    description: Manage contracts between applications and API versions
+  - name: Public
+    description: Search publicly available APIs in an organization portal
+
+paths:
+  /organizations/{organizationId}/apis:
+    get:
+      operationId: listApis
+      summary: List all APIs
+      description: |
+        Returns a paginated list of all APIs in the specified organization.
+        Use query parameters to filter, sort, and paginate the results.
+      tags:
+        - APIs
+      parameters:
+        - $ref: "#/components/parameters/organizationId"
+        - name: query
+          in: query
+          description: Search term to filter APIs by name or description.
+          required: false
+          schema:
+            type: string
+          example: "order-api"
+        - name: limit
+          in: query
+          description: Maximum number of results to return per page.
+          required: false
+          schema:
+            type: integer
+            default: 25
+            minimum: 1
+            maximum: 500
+          example: 25
+        - name: offset
+          in: query
+          description: Number of results to skip for pagination.
+          required: false
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+          example: 0
+        - name: sort
+          in: query
+          description: |
+            Field to sort results by. Prefix with `-` for descending order.
+          required: false
+          schema:
+            type: string
+            enum:
+              - name
+              - -name
+              - createdDate
+              - -createdDate
+              - updatedDate
+              - -updatedDate
+          example: "-updatedDate"
+      responses:
+        "200":
+          description: A paginated list of APIs.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiListResponse"
+              example:
+                apis:
+                  - audit:
+                      created:
+                        date: "2025-06-15T10:30:00.000Z"
+                      updated:
+                        date: "2025-09-20T14:45:00.000Z"
+                    id: 101234
+                    name: "Order Management API"
+                    description: "API for managing customer orders and fulfillment"
+                    versions:
+                      - id: 501234
+                        name: "v1"
+                        assetVersion: "1.0.0"
+                      - id: 501235
+                        name: "v2"
+                        assetVersion: "2.0.0"
+                    organizationId: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+                  - audit:
+                      created:
+                        date: "2025-08-01T08:00:00.000Z"
+                      updated:
+                        date: "2025-10-05T16:20:00.000Z"
+                    id: 101235
+                    name: "Customer API"
+                    description: "API for customer profile management"
+                    versions:
+                      - id: 501236
+                        name: "v1"
+                        assetVersion: "1.0.0"
+                    organizationId: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+                total: 2
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    post:
+      operationId: createApi
+      summary: Create a new API
+      description: |
+        Creates a new API definition in the specified organization. You can
+        optionally include an initial version in the request body.
+      tags:
+        - APIs
+      parameters:
+        - $ref: "#/components/parameters/organizationId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateApiRequest"
+            example:
+              name: "Shipping API"
+              description: "API for managing shipping rates, tracking, and logistics"
+              version:
+                name: "v1"
+                description: "Initial release with rate calculation and tracking endpoints"
+      responses:
+        "201":
+          description: The newly created API.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Api"
+              example:
+                id: 101236
+                name: "Shipping API"
+                description: "API for managing shipping rates, tracking, and logistics"
+                versions:
+                  - id: 501237
+                    name: "v1"
+                    assetVersion: "1.0.0"
+                organizationId: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "409":
+          description: An API with the given name already exists.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: 409
+                message: "An API with name 'Shipping API' already exists in this organization."
+
+  /organizations/{organizationId}/apis/{apiId}:
+    get:
+      operationId: getApi
+      summary: Get API by ID
+      description: Returns the full details of a single API definition.
+      tags:
+        - APIs
+      parameters:
+        - $ref: "#/components/parameters/organizationId"
+        - $ref: "#/components/parameters/apiId"
+      responses:
+        "200":
+          description: The requested API.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiDetail"
+              example:
+                id: 101234
+                name: "Order Management API"
+                description: "API for managing customer orders and fulfillment"
+                groupId: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+                assetId: "order-management-api"
+                versions:
+                  - id: 501234
+                    name: "v1"
+                    assetVersion: "1.0.0"
+                  - id: 501235
+                    name: "v2"
+                    assetVersion: "2.0.0"
+                organizationId: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    patch:
+      operationId: updateApi
+      summary: Update an API
+      description: |
+        Updates the specified API definition. Only the fields included in
+        the request body are modified; all other fields remain unchanged.
+      tags:
+        - APIs
+      parameters:
+        - $ref: "#/components/parameters/organizationId"
+        - $ref: "#/components/parameters/apiId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateApiRequest"
+            example:
+              name: "Order Management API v2"
+              description: "Updated API for managing customer orders, returns, and fulfillment"
+              groupId: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+              assetId: "order-management-api-v2"
+      responses:
+        "200":
+          description: The updated API.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiDetail"
+              example:
+                id: 101234
+                name: "Order Management API v2"
+                description: "Updated API for managing customer orders, returns, and fulfillment"
+                groupId: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+                assetId: "order-management-api-v2"
+                versions:
+                  - id: 501234
+                    name: "v1"
+                    assetVersion: "1.0.0"
+                  - id: 501235
+                    name: "v2"
+                    assetVersion: "2.0.0"
+                organizationId: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    delete:
+      operationId: deleteApi
+      summary: Delete an API
+      description: |
+        Permanently deletes an API and all its associated versions. This
+        action is irreversible.
+      tags:
+        - APIs
+      parameters:
+        - $ref: "#/components/parameters/organizationId"
+        - $ref: "#/components/parameters/apiId"
+      responses:
+        "204":
+          description: API successfully deleted. No content returned.
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /organizations/{organizationId}/apis/{apiId}/versions:
+    get:
+      operationId: listApiVersions
+      summary: List API versions
+      description: Returns all versions of the specified API.
+      tags:
+        - Versions
+      parameters:
+        - $ref: "#/components/parameters/organizationId"
+        - $ref: "#/components/parameters/apiId"
+      responses:
+        "200":
+          description: A list of API versions.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiVersionListResponse"
+              example:
+                versions:
+                  - id: 501234
+                    name: "v1"
+                    assetVersion: "1.0.0"
+                    productVersion: "v1"
+                    description: "Initial release with core order endpoints"
+                  - id: 501235
+                    name: "v2"
+                    assetVersion: "2.0.0"
+                    productVersion: "v2"
+                    description: "Added bulk order and return management endpoints"
+                  - id: 501236
+                    name: "v3-beta"
+                    assetVersion: "3.0.0-beta"
+                    productVersion: "v3"
+                    description: "Beta release with streaming order events"
+                total: 3
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /organizations/{organizationId}/apis/{apiId}/versions/{apiVersionId}:
+    get:
+      operationId: getApiVersion
+      summary: Get API version
+      description: Returns the full details of a single API version.
+      tags:
+        - Versions
+      parameters:
+        - $ref: "#/components/parameters/organizationId"
+        - $ref: "#/components/parameters/apiId"
+        - $ref: "#/components/parameters/apiVersionId"
+      responses:
+        "200":
+          description: The requested API version.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiVersionDetail"
+              example:
+                id: 501234
+                name: "v1"
+                assetVersion: "1.0.0"
+                productVersion: "v1"
+                description: "Initial release with core order endpoints"
+                endpointUri: "https://api.example.com/orders/v1"
+                tags:
+                  - "orders"
+                  - "e-commerce"
+                  - "production"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    patch:
+      operationId: updateApiVersion
+      summary: Update an API version
+      description: |
+        Updates the specified API version. Only the fields included in the
+        request body are modified; all other fields remain unchanged.
+      tags:
+        - Versions
+      parameters:
+        - $ref: "#/components/parameters/organizationId"
+        - $ref: "#/components/parameters/apiId"
+        - $ref: "#/components/parameters/apiVersionId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateApiVersionRequest"
+            example:
+              assetVersion: "1.1.0"
+              description: "Patch release with improved error handling and validation"
+      responses:
+        "200":
+          description: The updated API version.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiVersionDetail"
+              example:
+                id: 501234
+                name: "v1"
+                assetVersion: "1.1.0"
+                productVersion: "v1"
+                description: "Patch release with improved error handling and validation"
+                endpointUri: "https://api.example.com/orders/v1"
+                tags:
+                  - "orders"
+                  - "e-commerce"
+                  - "production"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /organizations/{organizationId}/apis/{apiId}/versions/{apiVersionId}/classify:
+    post:
+      operationId: classifyApiVersion
+      summary: Classify API version into an environment
+      description: |
+        Associates an API version with a specific Anypoint Platform environment.
+        This is used to deploy or register the API instance in the target
+        environment for governance and management purposes.
+      tags:
+        - Classification
+      parameters:
+        - $ref: "#/components/parameters/organizationId"
+        - $ref: "#/components/parameters/apiId"
+        - $ref: "#/components/parameters/apiVersionId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClassifyRequest"
+            example:
+              environmentId: "b2c3d4e5-f6a7-8901-bcde-f12345678901"
+              instanceLabel: "production-us-east"
+      responses:
+        "201":
+          description: API version successfully classified into the environment.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClassifyResponse"
+              example:
+                id: 701234
+                environmentId: "b2c3d4e5-f6a7-8901-bcde-f12345678901"
+                instanceLabel: "production-us-east"
+                apiId: 101234
+                apiVersionId: 501234
+                status: "active"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: API version is already classified in the target environment.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: 409
+                message: "This API version is already classified in the specified environment."
+
+  /organizations/{organizationId}/applications/{applicationId}/contracts:
+    get:
+      operationId: listContracts
+      summary: List application contracts
+      description: |
+        Returns all contracts associated with the specified client application.
+        Contracts represent approved access agreements between an application
+        and an API version.
+      tags:
+        - Contracts
+      parameters:
+        - $ref: "#/components/parameters/organizationId"
+        - name: applicationId
+          in: path
+          required: true
+          description: The unique identifier of the client application.
+          schema:
+            type: integer
+          example: 301234
+      responses:
+        "200":
+          description: A list of contracts for the application.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContractListResponse"
+              example:
+                contracts:
+                  - id: 801234
+                    status: "approved"
+                    apiId: 101234
+                    apiVersionId: 501234
+                    applicationId: 301234
+                    requestedTierId: 601001
+                  - id: 801235
+                    status: "pending"
+                    apiId: 101235
+                    apiVersionId: 501236
+                    applicationId: 301234
+                    requestedTierId: 601002
+                  - id: 801236
+                    status: "revoked"
+                    apiId: 101236
+                    apiVersionId: 501237
+                    applicationId: 301234
+                    requestedTierId: 601001
+                total: 3
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /organizations/{organizationId}/apis/{apiId}/versions/{apiVersionId}/contracts/{contractId}/revoke:
+    post:
+      operationId: revokeContract
+      summary: Revoke a contract
+      description: |
+        Revokes an existing contract between a client application and the
+        specified API version. Once revoked, the application loses access
+        to the API. This action cannot be undone.
+      tags:
+        - Contracts
+      parameters:
+        - $ref: "#/components/parameters/organizationId"
+        - $ref: "#/components/parameters/apiId"
+        - $ref: "#/components/parameters/apiVersionId"
+        - name: contractId
+          in: path
+          required: true
+          description: The unique identifier of the contract to revoke.
+          schema:
+            type: integer
+          example: 801234
+      responses:
+        "204":
+          description: Contract successfully revoked. No content returned.
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: Contract is already revoked or in a state that cannot be revoked.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: 409
+                message: "Contract is already in 'revoked' state."
+
+  /organizations/{organizationId}/public/apis:
+    get:
+      operationId: searchPublicApis
+      summary: Search public APIs
+      description: |
+        Searches for publicly available APIs in the organization's public
+        developer portal. This endpoint does not require authentication
+        if the organization has a public portal enabled.
+      tags:
+        - Public
+      security:
+        - bearerAuth: []
+        - {}
+      parameters:
+        - $ref: "#/components/parameters/organizationId"
+        - name: query
+          in: query
+          description: Search term to filter public APIs by name or description.
+          required: false
+          schema:
+            type: string
+          example: "payment"
+        - name: limit
+          in: query
+          description: Maximum number of results to return per page.
+          required: false
+          schema:
+            type: integer
+            default: 25
+            minimum: 1
+            maximum: 500
+          example: 10
+        - name: offset
+          in: query
+          description: Number of results to skip for pagination.
+          required: false
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+          example: 0
+      responses:
+        "200":
+          description: A paginated list of public APIs.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicApiListResponse"
+              example:
+                apis:
+                  - id: 101240
+                    name: "Payment Processing API"
+                    description: "Public API for processing payments, refunds, and transaction inquiries"
+                    versions:
+                      - id: 501240
+                        name: "v1"
+                        assetVersion: "1.0.0"
+                        portalId: 901001
+                      - id: 501241
+                        name: "v2"
+                        assetVersion: "2.0.0"
+                        portalId: 901002
+                  - id: 101241
+                    name: "Payment Methods API"
+                    description: "API for retrieving supported payment methods and providers"
+                    versions:
+                      - id: 501242
+                        name: "v1"
+                        assetVersion: "1.0.0"
+                        portalId: 901003
+                total: 2
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        A valid Anypoint Platform access token. Obtain a token by
+        authenticating via the Anypoint Platform Login API or by using
+        a connected app with the appropriate scopes.
+
+  parameters:
+    organizationId:
+      name: organizationId
+      in: path
+      required: true
+      description: The unique identifier of the Anypoint Platform organization.
+      schema:
+        type: string
+        format: uuid
+      example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+
+    apiId:
+      name: apiId
+      in: path
+      required: true
+      description: The unique numeric identifier of the API.
+      schema:
+        type: integer
+      example: 101234
+
+    apiVersionId:
+      name: apiVersionId
+      in: path
+      required: true
+      description: The unique numeric identifier of the API version.
+      schema:
+        type: integer
+      example: 501234
+
+  schemas:
+    # ---- Audit ----
+    AuditInfo:
+      type: object
+      description: Audit metadata with creation and update timestamps.
+      properties:
+        created:
+          type: object
+          properties:
+            date:
+              type: string
+              format: date-time
+              description: The date and time the resource was created.
+              example: "2025-06-15T10:30:00.000Z"
+        updated:
+          type: object
+          properties:
+            date:
+              type: string
+              format: date-time
+              description: The date and time the resource was last updated.
+              example: "2025-09-20T14:45:00.000Z"
+
+    # ---- Version Summary ----
+    VersionSummary:
+      type: object
+      description: A brief summary of an API version.
+      properties:
+        id:
+          type: integer
+          description: The unique numeric identifier of the API version.
+          example: 501234
+        name:
+          type: string
+          description: The display name of the version (e.g., v1, v2).
+          example: "v1"
+        assetVersion:
+          type: string
+          description: The semantic version of the Exchange asset.
+          example: "1.0.0"
+
+    # ---- API (list item) ----
+    ApiSummary:
+      type: object
+      description: Summary representation of an API as returned in list responses.
+      properties:
+        audit:
+          $ref: "#/components/schemas/AuditInfo"
+        id:
+          type: integer
+          description: The unique numeric identifier of the API.
+          example: 101234
+        name:
+          type: string
+          description: The display name of the API.
+          example: "Order Management API"
+        description:
+          type: string
+          description: A human-readable description of the API.
+          example: "API for managing customer orders and fulfillment"
+        versions:
+          type: array
+          description: The versions associated with this API.
+          items:
+            $ref: "#/components/schemas/VersionSummary"
+        organizationId:
+          type: string
+          format: uuid
+          description: The ID of the organization that owns this API.
+          example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+
+    # ---- API (full detail) ----
+    Api:
+      type: object
+      description: Full representation of an API.
+      properties:
+        id:
+          type: integer
+          description: The unique numeric identifier of the API.
+          example: 101234
+        name:
+          type: string
+          description: The display name of the API.
+          example: "Order Management API"
+        description:
+          type: string
+          description: A human-readable description of the API.
+          example: "API for managing customer orders and fulfillment"
+        versions:
+          type: array
+          description: The versions associated with this API.
+          items:
+            $ref: "#/components/schemas/VersionSummary"
+        organizationId:
+          type: string
+          format: uuid
+          description: The ID of the organization that owns this API.
+          example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+
+    ApiDetail:
+      type: object
+      description: Detailed representation of an API including asset metadata.
+      properties:
+        id:
+          type: integer
+          description: The unique numeric identifier of the API.
+          example: 101234
+        name:
+          type: string
+          description: The display name of the API.
+          example: "Order Management API"
+        description:
+          type: string
+          description: A human-readable description of the API.
+          example: "API for managing customer orders and fulfillment"
+        groupId:
+          type: string
+          description: The Exchange group ID (typically the organization ID).
+          example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+        assetId:
+          type: string
+          description: The Exchange asset identifier.
+          example: "order-management-api"
+        versions:
+          type: array
+          description: The versions associated with this API.
+          items:
+            $ref: "#/components/schemas/VersionSummary"
+        organizationId:
+          type: string
+          format: uuid
+          description: The ID of the organization that owns this API.
+          example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+
+    # ---- API List Response ----
+    ApiListResponse:
+      type: object
+      description: Paginated list of APIs.
+      properties:
+        apis:
+          type: array
+          items:
+            $ref: "#/components/schemas/ApiSummary"
+        total:
+          type: integer
+          description: Total number of APIs matching the query.
+          example: 42
+
+    # ---- Create / Update Requests ----
+    CreateApiRequest:
+      type: object
+      description: Request body for creating a new API.
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          description: The display name for the new API.
+          example: "Shipping API"
+        description:
+          type: string
+          description: A human-readable description of the API.
+          example: "API for managing shipping rates, tracking, and logistics"
+        version:
+          type: object
+          description: Optional initial version to create with the API.
+          properties:
+            name:
+              type: string
+              description: The display name of the initial version.
+              example: "v1"
+            description:
+              type: string
+              description: A description of the initial version.
+              example: "Initial release with rate calculation and tracking endpoints"
+
+    UpdateApiRequest:
+      type: object
+      description: Request body for updating an existing API.
+      properties:
+        name:
+          type: string
+          description: The updated display name for the API.
+          example: "Order Management API v2"
+        description:
+          type: string
+          description: The updated description for the API.
+          example: "Updated API for managing customer orders, returns, and fulfillment"
+        groupId:
+          type: string
+          description: The Exchange group ID to associate with the API.
+          example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+        assetId:
+          type: string
+          description: The Exchange asset identifier to associate with the API.
+          example: "order-management-api-v2"
+
+    # ---- API Version Schemas ----
+    ApiVersion:
+      type: object
+      description: Summary representation of an API version in list responses.
+      properties:
+        id:
+          type: integer
+          description: The unique numeric identifier of the API version.
+          example: 501234
+        name:
+          type: string
+          description: The display name of the version.
+          example: "v1"
+        assetVersion:
+          type: string
+          description: The semantic version of the Exchange asset.
+          example: "1.0.0"
+        productVersion:
+          type: string
+          description: The product version label.
+          example: "v1"
+        description:
+          type: string
+          description: A human-readable description of the version.
+          example: "Initial release with core order endpoints"
+
+    ApiVersionDetail:
+      type: object
+      description: Detailed representation of an API version.
+      properties:
+        id:
+          type: integer
+          description: The unique numeric identifier of the API version.
+          example: 501234
+        name:
+          type: string
+          description: The display name of the version.
+          example: "v1"
+        assetVersion:
+          type: string
+          description: The semantic version of the Exchange asset.
+          example: "1.0.0"
+        productVersion:
+          type: string
+          description: The product version label.
+          example: "v1"
+        description:
+          type: string
+          description: A human-readable description of the version.
+          example: "Initial release with core order endpoints"
+        endpointUri:
+          type: string
+          format: uri
+          description: The implementation endpoint URI for this API version.
+          example: "https://api.example.com/orders/v1"
+        tags:
+          type: array
+          description: Tags associated with the API version for categorization.
+          items:
+            type: string
+          example:
+            - "orders"
+            - "e-commerce"
+            - "production"
+
+    ApiVersionListResponse:
+      type: object
+      description: Paginated list of API versions.
+      properties:
+        versions:
+          type: array
+          items:
+            $ref: "#/components/schemas/ApiVersion"
+        total:
+          type: integer
+          description: Total number of versions for the API.
+          example: 3
+
+    UpdateApiVersionRequest:
+      type: object
+      description: Request body for updating an existing API version.
+      properties:
+        assetVersion:
+          type: string
+          description: The updated semantic version of the Exchange asset.
+          example: "1.1.0"
+        description:
+          type: string
+          description: The updated description for the version.
+          example: "Patch release with improved error handling and validation"
+
+    # ---- Classification ----
+    ClassifyRequest:
+      type: object
+      description: Request body for classifying an API version into an environment.
+      required:
+        - environmentId
+      properties:
+        environmentId:
+          type: string
+          format: uuid
+          description: The unique identifier of the target environment.
+          example: "b2c3d4e5-f6a7-8901-bcde-f12345678901"
+        instanceLabel:
+          type: string
+          description: A human-readable label for the API instance in the environment.
+          example: "production-us-east"
+
+    ClassifyResponse:
+      type: object
+      description: The result of classifying an API version into an environment.
+      properties:
+        id:
+          type: integer
+          description: The unique identifier of the classification record.
+          example: 701234
+        environmentId:
+          type: string
+          format: uuid
+          description: The environment the API version was classified into.
+          example: "b2c3d4e5-f6a7-8901-bcde-f12345678901"
+        instanceLabel:
+          type: string
+          description: The label for this API instance.
+          example: "production-us-east"
+        apiId:
+          type: integer
+          description: The ID of the classified API.
+          example: 101234
+        apiVersionId:
+          type: integer
+          description: The ID of the classified API version.
+          example: 501234
+        status:
+          type: string
+          description: The status of the classification.
+          enum:
+            - active
+            - inactive
+          example: "active"
+
+    # ---- Contracts ----
+    Contract:
+      type: object
+      description: A contract between a client application and an API version.
+      properties:
+        id:
+          type: integer
+          description: The unique identifier of the contract.
+          example: 801234
+        status:
+          type: string
+          description: The current status of the contract.
+          enum:
+            - pending
+            - approved
+            - revoked
+            - rejected
+          example: "approved"
+        apiId:
+          type: integer
+          description: The ID of the API the contract grants access to.
+          example: 101234
+        apiVersionId:
+          type: integer
+          description: The ID of the specific API version.
+          example: 501234
+        applicationId:
+          type: integer
+          description: The ID of the client application.
+          example: 301234
+        requestedTierId:
+          type: integer
+          description: The ID of the SLA tier requested by the application.
+          example: 601001
+
+    ContractListResponse:
+      type: object
+      description: Paginated list of contracts.
+      properties:
+        contracts:
+          type: array
+          items:
+            $ref: "#/components/schemas/Contract"
+        total:
+          type: integer
+          description: Total number of contracts for the application.
+          example: 3
+
+    # ---- Public API Schemas ----
+    PublicApiVersionSummary:
+      type: object
+      description: A version summary as returned in public API search results.
+      properties:
+        id:
+          type: integer
+          description: The unique numeric identifier of the API version.
+          example: 501240
+        name:
+          type: string
+          description: The display name of the version.
+          example: "v1"
+        assetVersion:
+          type: string
+          description: The semantic version of the Exchange asset.
+          example: "1.0.0"
+        portalId:
+          type: integer
+          description: The ID of the portal page for this version.
+          example: 901001
+
+    PublicApi:
+      type: object
+      description: A publicly available API as returned by the portal search.
+      properties:
+        id:
+          type: integer
+          description: The unique numeric identifier of the API.
+          example: 101240
+        name:
+          type: string
+          description: The display name of the API.
+          example: "Payment Processing API"
+        description:
+          type: string
+          description: A human-readable description of the API.
+          example: "Public API for processing payments, refunds, and transaction inquiries"
+        versions:
+          type: array
+          description: Published versions available in the public portal.
+          items:
+            $ref: "#/components/schemas/PublicApiVersionSummary"
+
+    PublicApiListResponse:
+      type: object
+      description: Paginated list of public APIs.
+      properties:
+        apis:
+          type: array
+          items:
+            $ref: "#/components/schemas/PublicApi"
+        total:
+          type: integer
+          description: Total number of public APIs matching the query.
+          example: 2
+
+    # ---- Error ----
+    ErrorResponse:
+      type: object
+      description: Standard error response.
+      properties:
+        status:
+          type: integer
+          description: The HTTP status code.
+          example: 404
+        message:
+          type: string
+          description: A human-readable error message.
+          example: "Resource not found."
+
+  responses:
+    BadRequest:
+      description: The request was malformed or contained invalid parameters.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            status: 400
+            message: "Invalid request: 'name' is required."
+
+    Unauthorized:
+      description: Authentication is missing or the provided token is invalid.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            status: 401
+            message: "Unauthorized. Please provide a valid bearer token."
+
+    NotFound:
+      description: The requested resource was not found.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            status: 404
+            message: "Resource not found."
