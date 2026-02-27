@@ -93,8 +93,8 @@
   "navbar": {
     "links": [
       {
-        "label": "GitHub",
-        "url": "https://github.com/as262909/mule_docs_mintlify"
+        "type": "github",
+        "href": "https://github.com/as262909/mule_docs_mintlify"
       }
     ]
   },
