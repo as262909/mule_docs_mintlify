@@ -5,13 +5,33 @@
   "colors": {
     "primary": "#00A1DF",
     "light": "#6AC1EE",
-    "dark": "#00044D"
+    "dark": "#00044D",
+    "background": {
+      "dark": "#0A0E27"
+    }
   },
   "logo": {
     "light": "/logo/light.svg",
     "dark": "/logo/dark.svg"
   },
   "favicon": "/favicon.svg",
+  "rounded": "default",
+  "font": {
+    "headings": {
+      "family": "Inter",
+      "weight": 700
+    }
+  },
+  "appearance": {
+    "default": "system"
+  },
+  "search": {
+    "prompt": "Search MuleSoft docs..."
+  },
+  "feedback": {
+    "thumbsRating": true,
+    "suggestEdit": true
+  },
   "navigation": {
     "tabs": [
       {
@@ -129,10 +149,35 @@
               "api-reference/api-manager",
               "api-reference/runtime-manager"
             ]
+          },
+          {
+            "group": "API Playground",
+            "pages": [
+              "api-reference/playground"
+            ]
           }
         ]
       }
-    ]
+    ],
+    "global": {
+      "anchors": [
+        {
+          "anchor": "Anypoint Platform",
+          "href": "https://anypoint.mulesoft.com",
+          "icon": "cloud"
+        },
+        {
+          "anchor": "Exchange",
+          "href": "https://www.mulesoft.com/exchange/",
+          "icon": "store"
+        },
+        {
+          "anchor": "Community",
+          "href": "https://help.mulesoft.com/s/forum",
+          "icon": "comments"
+        }
+      ]
+    }
   },
   "navbar": {
     "links": [
@@ -144,7 +189,9 @@
   },
   "footer": {
     "socials": {
-      "github": "https://github.com/as262909/mule_docs_mintlify"
+      "github": "https://github.com/as262909/mule_docs_mintlify",
+      "linkedin": "https://www.linkedin.com/company/mulesoft/",
+      "x": "https://x.com/MuleSoft"
     }
   }
 }

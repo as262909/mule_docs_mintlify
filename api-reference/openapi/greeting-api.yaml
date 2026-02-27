@@ -1,0 +1,338 @@
+openapi: 3.0.3
+info:
+  title: Hello World Greeting API
+  description: |
+    A sample MuleSoft API that demonstrates API-led connectivity.
+    This API provides greeting messages and supports CRUD operations
+    for managing custom greetings.
+  version: "1.0.0"
+  contact:
+    name: MuleSoft Documentation
+    url: https://docs.mulesoft.com
+
+servers:
+  - url: https://hello-world-greeting.us-e2.cloudhub.io/api
+    description: CloudHub Sandbox
+  - url: http://localhost:8081/api
+    description: Local Development
+
+tags:
+  - name: Greetings
+    description: Manage greeting messages
+  - name: Health
+    description: Service health checks
+
+paths:
+  /greeting:
+    get:
+      tags: [Greetings]
+      summary: Get today's greeting
+      description: Returns the current greeting message for the day.
+      operationId: getGreeting
+      responses:
+        "200":
+          description: Greeting retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Greeting"
+              example:
+                todays-greeting: "Hello, World! Welcome to MuleSoft."
+                timestamp: "2026-02-27T10:30:00Z"
+        "404":
+          description: No greeting found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                message: "Greeting not found"
+                code: 404
+
+    post:
+      tags: [Greetings]
+      summary: Create a new greeting
+      description: Submit a new greeting message. The message must be between 6 and 30 characters.
+      operationId: createGreeting
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateGreetingRequest"
+            example:
+              message: "Good morning, developers!"
+      responses:
+        "201":
+          description: Greeting created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GreetingWithId"
+              example:
+                id: "greet-001"
+                message: "Good morning, developers!"
+                createdAt: "2026-02-27T10:30:00Z"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                message: "The specified message is either too long or too short."
+                code: 400
+
+  /greeting/{greetingId}:
+    get:
+      tags: [Greetings]
+      summary: Get a greeting by ID
+      description: Retrieve a specific greeting message by its unique identifier.
+      operationId: getGreetingById
+      parameters:
+        - name: greetingId
+          in: path
+          required: true
+          description: The unique greeting identifier
+          schema:
+            type: string
+          example: "greet-001"
+      responses:
+        "200":
+          description: Greeting found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GreetingWithId"
+              example:
+                id: "greet-001"
+                message: "Good morning, developers!"
+                createdAt: "2026-02-27T10:30:00Z"
+        "404":
+          description: Greeting not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                message: "Greeting not found"
+                code: 404
+
+    put:
+      tags: [Greetings]
+      summary: Update a greeting
+      description: Update an existing greeting message by ID.
+      operationId: updateGreeting
+      parameters:
+        - name: greetingId
+          in: path
+          required: true
+          description: The unique greeting identifier
+          schema:
+            type: string
+          example: "greet-001"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateGreetingRequest"
+            example:
+              message: "Good evening, team!"
+      responses:
+        "200":
+          description: Greeting updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GreetingWithId"
+              example:
+                id: "greet-001"
+                message: "Good evening, team!"
+                createdAt: "2026-02-27T10:30:00Z"
+                updatedAt: "2026-02-27T18:00:00Z"
+        "404":
+          description: Greeting not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+    delete:
+      tags: [Greetings]
+      summary: Delete a greeting
+      description: Permanently remove a greeting by its ID.
+      operationId: deleteGreeting
+      parameters:
+        - name: greetingId
+          in: path
+          required: true
+          description: The unique greeting identifier
+          schema:
+            type: string
+          example: "greet-001"
+      responses:
+        "204":
+          description: Greeting deleted successfully
+        "404":
+          description: Greeting not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /greetings:
+    get:
+      tags: [Greetings]
+      summary: List all greetings
+      description: Retrieve a paginated list of all greeting messages.
+      operationId: listGreetings
+      parameters:
+        - name: limit
+          in: query
+          description: Maximum number of greetings to return
+          schema:
+            type: integer
+            default: 10
+            minimum: 1
+            maximum: 100
+          example: 10
+        - name: offset
+          in: query
+          description: Number of greetings to skip for pagination
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+          example: 0
+      responses:
+        "200":
+          description: List of greetings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GreetingList"
+              example:
+                total: 3
+                limit: 10
+                offset: 0
+                items:
+                  - id: "greet-001"
+                    message: "Good morning, developers!"
+                    createdAt: "2026-02-27T08:00:00Z"
+                  - id: "greet-002"
+                    message: "Hello from MuleSoft!"
+                    createdAt: "2026-02-27T09:00:00Z"
+                  - id: "greet-003"
+                    message: "Welcome to the API!"
+                    createdAt: "2026-02-27T10:00:00Z"
+
+  /health:
+    get:
+      tags: [Health]
+      summary: Health check
+      description: Returns the health status of the Greeting API service.
+      operationId: healthCheck
+      responses:
+        "200":
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+              example:
+                status: "UP"
+                version: "1.0.0"
+                uptime: "72h 15m 30s"
+
+components:
+  schemas:
+    Greeting:
+      type: object
+      properties:
+        todays-greeting:
+          type: string
+          description: The greeting message for today
+        timestamp:
+          type: string
+          format: date-time
+          description: When the greeting was generated
+
+    CreateGreetingRequest:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string
+          minLength: 6
+          maxLength: 30
+          description: The greeting message (6-30 characters)
+
+    GreetingWithId:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique greeting identifier
+        message:
+          type: string
+          description: The greeting message
+        createdAt:
+          type: string
+          format: date-time
+          description: Creation timestamp
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp
+
+    GreetingList:
+      type: object
+      properties:
+        total:
+          type: integer
+          description: Total number of greetings
+        limit:
+          type: integer
+          description: Page size
+        offset:
+          type: integer
+          description: Current offset
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/GreetingWithId"
+
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
+          description: Human-readable error description
+        code:
+          type: integer
+          description: HTTP status code
+
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [UP, DOWN]
+          description: Service health status
+        version:
+          type: string
+          description: API version
+        uptime:
+          type: string
+          description: Service uptime duration
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Anypoint Platform bearer token
+
+security:
+  - bearerAuth: []

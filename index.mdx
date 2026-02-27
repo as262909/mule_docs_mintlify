@@ -1,80 +1,88 @@
 ---
-title: "Introduction"
-description: "Your complete guide to MuleSoft and the Anypoint Platform"
+title: "MuleSoft Documentation"
+description: "Build, connect, and manage APIs with the Anypoint Platform"
+mode: "custom"
 ---
 
-## Getting Started
+<div className="not-prose">
+  <div style={{ textAlign: 'center', padding: '2rem 0 1rem' }}>
+    <h1 style={{ fontSize: '2.5rem', fontWeight: 800, lineHeight: 1.2 }}>
+      Connect anything.<br/>Change everything.
+    </h1>
+    <p style={{ fontSize: '1.15rem', color: 'var(--text-secondary)', maxWidth: '640px', margin: '1rem auto' }}>
+      The complete guide to building integrations, designing APIs, and managing your digital ecosystem with MuleSoft and the Anypoint Platform.
+    </p>
+  </div>
+</div>
 
-Your complete guide to building integrations with MuleSoft and the Anypoint Platform. From first steps to advanced messaging with Anypoint MQ.
-
-<Card
-  title="Quickstart"
-  icon="rocket"
-  href="/quickstart"
-  horizontal
->
-  Get up and running with MuleSoft in minutes.
-</Card>
-
-## Learn the Basics
-
-<Columns cols={2}>
-  <Card
-    title="What is MuleSoft?"
-    icon="circle-info"
-    href="/guides/what-is-mulesoft"
-  >
-    Understand the MuleSoft ecosystem and its capabilities.
+<CardGroup cols={3}>
+  <Card title="Quickstart" icon="rocket" href="/quickstart" color="#00A1DF">
+    Get your first Mule app running in minutes.
   </Card>
-  <Card
-    title="Anypoint Platform"
-    icon="cloud"
-    href="/guides/anypoint-platform"
-  >
-    Explore the Anypoint Platform and its core components.
+  <Card title="API Tutorial" icon="graduation-cap" href="/tutorials/api-led-overview" color="#00A1DF">
+    Build an API from start to finish.
   </Card>
-  <Card
-    title="Mule Runtime"
-    icon="server"
-    href="/guides/mule-runtime"
-  >
-    Learn about the Mule runtime engine that powers your integrations.
+  <Card title="API Playground" icon="play" href="/api-reference/playground" color="#00A1DF">
+    Try out API calls interactively.
   </Card>
-  <Card
-    title="DataWeave"
-    icon="code"
-    href="/guides/dataweave"
-  >
-    Transform data with MuleSoft's powerful expression language.
-  </Card>
-</Columns>
+</CardGroup>
 
-## Build Your First Integration
+---
 
-<Columns cols={2}>
-  <Card
-    title="First Mule App"
-    icon="play"
-    href="/guides/first-mule-app"
-  >
-    Build your first Mule application step by step.
+## Explore by Topic
+
+<CardGroup cols={2}>
+  <Card title="What is MuleSoft?" icon="circle-info" href="/guides/what-is-mulesoft">
+    Understand the MuleSoft ecosystem and API-led connectivity.
   </Card>
-  <Card
-    title="Connectors"
-    icon="plug"
-    href="/guides/connectors"
-  >
-    Connect to databases, APIs, SaaS apps, and more.
+  <Card title="Anypoint Platform" icon="cloud" href="/guides/anypoint-platform">
+    Design Center, Exchange, Runtime Manager, and API Manager.
   </Card>
-</Columns>
+  <Card title="Mule Runtime" icon="server" href="/guides/mule-runtime">
+    The engine that powers your integrations.
+  </Card>
+  <Card title="DataWeave" icon="code" href="/guides/dataweave">
+    Transform data between JSON, XML, CSV, and more.
+  </Card>
+  <Card title="Connectors" icon="plug" href="/guides/connectors">
+    Pre-built connectivity to Salesforce, SAP, databases, and 300+ systems.
+  </Card>
+  <Card title="Build Your First App" icon="hammer" href="/guides/first-mule-app">
+    Step-by-step guide to your first Mule application.
+  </Card>
+</CardGroup>
 
-## Anypoint MQ
+---
 
-<Card
-  title="Anypoint MQ Documentation"
-  icon="envelope"
-  href="/mq/index"
-  horizontal
->
-  Explore cloud-based asynchronous messaging with queues, exchanges, and routing rules.
-</Card>
+## Messaging & Integration
+
+<CardGroup cols={2}>
+  <Card title="Anypoint MQ" icon="envelope" href="/mq/index">
+    Cloud-based asynchronous messaging with queues, exchanges, and routing rules.
+  </Card>
+  <Card title="API Testing" icon="vial" href="/api-testing/index">
+    Test and monitor APIs with MUnit, BAT CLI, and functional monitoring.
+  </Card>
+</CardGroup>
+
+---
+
+## API Reference
+
+<CardGroup cols={3}>
+  <Card title="API Platform API" icon="layer-group" href="/api-reference/api-platform">
+    Manage APIs, versions, and portals.
+  </Card>
+  <Card title="API Manager API" icon="sliders" href="/api-reference/api-manager">
+    Instances, policies, and SLA tiers.
+  </Card>
+  <Card title="Runtime Manager API" icon="server" href="/api-reference/runtime-manager">
+    Servers, clusters, and deployments.
+  </Card>
+</CardGroup>
+
+---
+
+<Note>
+  **New to MuleSoft?** Start with the [Quickstart](/quickstart) to set up your environment, then follow the [Build an API](/tutorials/api-led-overview) tutorial to design, develop, test, deploy, and operate your first API end to end.
+</Note>
