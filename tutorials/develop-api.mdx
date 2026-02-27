@@ -1,0 +1,161 @@
+---
+title: "Develop the API"
+description: "Build a Mule application from your API specification"
+---
+
+## Overview
+
+With your API specification published to Exchange, you can now import it into Anypoint Studio to scaffold a fully functional Mule application. Studio generates the HTTP listener, routing logic, error handlers, and endpoint stubs automatically from your RAML definition.
+
+---
+
+## Step 3.1: Add Anypoint Platform Credentials to Studio
+
+Before importing assets from Exchange, Studio needs your Anypoint Platform credentials.
+
+<Steps>
+  <Step title="Open Studio Preferences">
+    In Anypoint Studio, navigate to **Anypoint Studio > Settings** (macOS) or **Window > Preferences** (Windows/Linux).
+  </Step>
+  <Step title="Configure Authentication">
+    Select **Anypoint Studio > Authentication** in the left panel. Enter your Anypoint Platform username and password, then click **Sign In**. Studio will validate your credentials and connect to your organization.
+  </Step>
+</Steps>
+
+<Tip>
+  If your organization uses external identity providers (SSO), use the **External Identity** option and follow your organization's SSO login flow.
+</Tip>
+
+---
+
+## Step 3.2: Create a New Project from Exchange
+
+<Steps>
+  <Step title="Start a new Mule project">
+    Go to **File > New > Mule Project**. Enter the project name **hello-world-app**.
+  </Step>
+  <Step title="Import from Exchange">
+    In the project creation wizard, check **Import a published API** and click the **From Exchange** button. Search for **hello-world-api** and select your published specification.
+  </Step>
+  <Step title="Scaffold flows">
+    Click **Finish**. Studio automatically generates the following components from your RAML:
+  </Step>
+</Steps>
+
+Studio generates the following scaffolded components:
+
+| Component | Purpose |
+|---|---|
+| **HTTP Listener** | Receives incoming HTTP requests on the configured host and port. |
+| **APIkit Router** | Routes requests to the correct flow based on the resource path and HTTP method. |
+| **Error Handlers** | Default error handling for common HTTP error codes (400, 404, 405, 406, 415, 501). |
+| **GET /greeting flow** | A stub flow for the `GET /greeting` endpoint, ready for you to add business logic. |
+
+---
+
+## Step 3.3: Configure the API Logic
+
+<Steps>
+  <Step title="Open the GET /greeting flow">
+    In the Studio canvas, locate the **get:\greeting:hello-world-api-config** flow. This flow contains a default **Transform Message** component.
+  </Step>
+  <Step title="Remove the Transform Message component">
+    Select the **Transform Message** component and delete it. You will replace it with a simpler payload.
+  </Step>
+  <Step title="Add a Set Payload component">
+    From the Mule Palette, drag a **Set Payload** component into the flow's process section. Configure it with the following value:
+
+    ```
+    Today the greeting is Hello.
+    ```
+  </Step>
+</Steps>
+
+<Note>
+  The Set Payload component directly assigns a static string to the message payload. For production APIs, you would typically use Transform Message with DataWeave to map data from databases, services, or other sources.
+</Note>
+
+---
+
+## Step 3.4: Test Locally
+
+<Steps>
+  <Step title="Run the application">
+    Right-click the project in the Package Explorer and select **Run As > Mule Application**. Wait for the console to display **DEPLOYED** status.
+  </Step>
+  <Step title="Send a test request">
+    Open your REST client and send a **GET** request to:
+
+    ```
+    http://localhost:8081/api/greeting
+    ```
+  </Step>
+  <Step title="Verify the response">
+    Confirm that you receive a **200 OK** status code with the response body:
+
+    ```
+    Today the greeting is Hello.
+    ```
+  </Step>
+</Steps>
+
+### Canvas Views
+
+Anypoint Studio provides three views of your Mule application:
+
+| View | Description |
+|---|---|
+| **Message Flow** | Visual drag-and-drop canvas showing components and their connections. |
+| **Global Elements** | Shared configuration elements (HTTP listener config, API autodiscovery, etc.). |
+| **Configuration XML** | The underlying XML source of your Mule application for direct editing. |
+
+### HTTP Listener Configuration
+
+The scaffolded HTTP Listener uses the following default configuration:
+
+```xml
+<http:listener-config name="hello-world-api-httpListenerConfig">
+  <http:listener-connection host="0.0.0.0" port="8081" />
+</http:listener-config>
+
+<http:listener config-ref="hello-world-api-httpListenerConfig" path="/api/*" />
+```
+
+| Property | Value | Description |
+|---|---|---|
+| `host` | `0.0.0.0` | Listens on all network interfaces. |
+| `port` | `8081` | Default HTTP port for Mule applications. |
+| `path` | `/api/*` | Base path prefix; all resources are served under `/api`. |
+
+---
+
+## Step 3.5: Create a Business Group for Exchange Publishing
+
+<Steps>
+  <Step title="Navigate to Access Management">
+    In Anypoint Platform, go to **Access Management > Business Groups**.
+  </Step>
+  <Step title="Create a new Business Group">
+    Click **Create Business Group** and provide a name that reflects your team or project. Business groups control asset visibility and access on Exchange.
+  </Step>
+</Steps>
+
+---
+
+## Step 3.6: Publish to Exchange
+
+<Steps>
+  <Step title="Open the publish wizard">
+    In Anypoint Studio, right-click your project and select **Anypoint Platform > Publish to Exchange**.
+  </Step>
+  <Step title="Configure asset details">
+    Set the asset type to **Example**. Confirm the project name, version, and target business group.
+  </Step>
+  <Step title="Publish">
+    Click **Finish** to publish your Mule application to Exchange. Other developers in your organization can now discover and import this example project.
+  </Step>
+</Steps>
+
+<Warning>
+  Ensure your project compiles and runs successfully before publishing. Exchange does not validate the runtime behavior of published assets -- only the packaging and metadata.
+</Warning>

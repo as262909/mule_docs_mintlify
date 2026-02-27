@@ -1,0 +1,85 @@
+---
+title: "Operate the API"
+description: "Monitor and manage your deployed API"
+---
+
+## Overview
+
+Deploying an API is not the end of the journey -- it is the beginning of operations. Runtime Manager gives you visibility into the health, performance, and behavior of your running applications. The more work your API does, the more data Runtime Manager can provide for troubleshooting and optimization.
+
+---
+
+## Access Runtime Manager
+
+<Steps>
+  <Step title="Open Runtime Manager">
+    Log in to Anypoint Platform and navigate to **Runtime Manager** from the main navigation menu.
+  </Step>
+  <Step title="Switch to the Sandbox environment">
+    Use the environment switcher in the upper-left corner to select **Sandbox**. You will see the applications you deployed in the previous step, including your Mule application and API proxy.
+  </Step>
+  <Step title="Select your application">
+    Click your deployed API proxy application to open its management dashboard. This is where you monitor traffic, review logs, and manage application settings.
+  </Step>
+</Steps>
+
+---
+
+## Monitor Your Deployed API
+
+Once your API proxy is handling traffic, Runtime Manager begins collecting data that you can use to understand usage patterns and diagnose issues.
+
+### Monitoring Capabilities
+
+| Capability | Description | Details |
+|---|---|---|
+| **Dashboard** | High-level view of application status, worker health, and request volume. | Shows current state, uptime, and deployment metadata. |
+| **Logs** | Application log output from your Mule runtime. | Retained for up to **30 days** or **100 MB**, whichever limit is reached first. Searchable and filterable by log level. |
+| **Settings** | Runtime configuration including properties, worker size, and environment variables. | Modify settings without redeploying the application. |
+| **Insight** | Transaction-level visibility into message flow execution. | Track individual requests through your flows to identify bottlenecks or failures. |
+
+<Note>
+  Log retention is capped at **30 days** and **100 MB** per application. For long-term log storage, configure a log forwarding integration to send logs to an external system such as Splunk, ELK, or a cloud logging service.
+</Note>
+
+---
+
+## Enable Advanced Monitoring
+
+For deeper operational insight, enable Anypoint Monitoring and Visualizer.
+
+<AccordionGroup>
+  <Accordion title="Anypoint Monitoring">
+    Anypoint Monitoring provides built-in dashboards with metrics on request volume, response times, error rates, and infrastructure utilization. It also supports custom dashboards and alerts so you can proactively detect issues before they impact consumers.
+
+    To enable Anypoint Monitoring:
+    1. Navigate to **Anypoint Monitoring** from the main Anypoint Platform menu.
+    2. Select your environment and application.
+    3. Explore the pre-built dashboards or create custom ones for your specific KPIs.
+  </Accordion>
+  <Accordion title="Anypoint Visualizer">
+    Anypoint Visualizer automatically maps the dependencies between your deployed APIs, applications, and services. It generates a real-time topology view that shows how data flows through your integration network, making it easy to understand the impact of changes and identify single points of failure.
+
+    To enable Visualizer:
+    1. Navigate to **Visualizer** from the Anypoint Platform menu.
+    2. Select your environment to see the auto-discovered application topology.
+    3. Use layers (Experience, Process, System) to organize the view according to your API-led architecture.
+  </Accordion>
+</AccordionGroup>
+
+<Tip>
+  The more work your API does, the more data Runtime Manager can provide. Generate traffic to your API (manually or through automated tests) to populate dashboards and validate that monitoring, alerting, and logging are configured correctly before going to production.
+</Tip>
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Runtime Manager Documentation" icon="server" href="/platform/runtime-manager">
+    Learn about application management, scheduling, clustering, and log forwarding in Runtime Manager.
+  </Card>
+  <Card title="Anypoint Monitoring" icon="chart-mixed" href="/platform/anypoint-monitoring">
+    Set up dashboards, alerts, and custom metrics for deep operational visibility into your APIs.
+  </Card>
+</CardGroup>

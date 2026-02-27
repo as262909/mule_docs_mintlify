@@ -1,0 +1,61 @@
+---
+title: "Build an API from Start to Finish"
+description: "End-to-end tutorial for API-led connectivity with MuleSoft"
+---
+
+## Overview
+
+API-led connectivity enables delightful digital experiences by organizing your integrations into layers of reusable, purpose-built APIs. At their core, APIs are digital messengers that carry requests and responses between applications, allowing systems to communicate without knowing the details of each other's implementation.
+
+This tutorial walks you through the full lifecycle of building, deploying, and operating an API using MuleSoft's Anypoint Platform. By the end, you will have a working API running in the cloud with validation, error handling, a proxy gateway, and rate limiting in place.
+
+<Note>
+  No prior MuleSoft experience is required. Each step builds on the previous one, so follow them in order for the best learning experience.
+</Note>
+
+## The 6-Step Journey
+
+<Steps>
+  <Step title="Prerequisites and Initial Setup">
+    Ensure you have access to Anypoint Platform, Anypoint Studio installed locally, and a REST client (such as Advanced REST Client or Postman) for testing your API endpoints.
+  </Step>
+  <Step title="Design an API Specification">
+    Create a RAML specification that defines your API's resources, methods, request/response schemas, and example payloads. Test it against a mocking service and publish it to Exchange.
+  </Step>
+  <Step title="Develop the API">
+    Import your published specification into Anypoint Studio to scaffold a Mule application. Configure the logic behind each endpoint, test locally, and publish your application to Exchange.
+  </Step>
+  <Step title="Add Validation and Error Handling">
+    Strengthen your API by adding input validation rules and custom error handlers. Use the Studio debugger to step through your flows and verify behavior.
+  </Step>
+  <Step title="Deploy to CloudHub">
+    Deploy your Mule application to CloudHub, create an API proxy in API Manager, and apply a rate-limiting policy to protect your API from excessive traffic.
+  </Step>
+  <Step title="Operate the API">
+    Monitor your running API using Runtime Manager. Review logs, traffic data, and performance metrics to keep your API healthy in production.
+  </Step>
+</Steps>
+
+## Tutorial Pages
+
+<CardGroup cols={2}>
+  <Card title="Design an API Specification" icon="pencil-ruler" href="/tutorials/design-api">
+    Define your API contract using RAML, test it with a mocking service, and publish to Exchange.
+  </Card>
+  <Card title="Develop the API" icon="code" href="/tutorials/develop-api">
+    Scaffold a Mule application from your spec, configure endpoints, and test locally.
+  </Card>
+  <Card title="Add Validation and Error Handling" icon="shield-check" href="/tutorials/validate-and-test">
+    Add input validation, custom error responses, and debug your flows.
+  </Card>
+  <Card title="Deploy to CloudHub" icon="cloud-arrow-up" href="/tutorials/deploy-api">
+    Deploy to CloudHub, set up an API proxy, and apply rate limiting.
+  </Card>
+  <Card title="Operate the API" icon="chart-line" href="/tutorials/operate-api">
+    Monitor traffic, review logs, and manage your deployed API.
+  </Card>
+</CardGroup>
+
+<Tip>
+  Use the API-led connectivity model to plan your own projects. Organize APIs into three layers -- **Experience APIs** (user-facing), **Process APIs** (orchestration logic), and **System APIs** (back-end connectors) -- to build a composable, reusable integration architecture.
+</Tip>

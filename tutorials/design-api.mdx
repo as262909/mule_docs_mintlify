@@ -1,0 +1,160 @@
+---
+title: "Design an API Specification"
+description: "Create, test, and publish a RAML API specification"
+---
+
+## What Is an API Specification?
+
+An API specification details the functional and expected behavior of an API. It acts as a contract between the API provider and its consumers, describing the available resources, HTTP methods, request and response schemas, status codes, and example payloads. By designing the specification first, you ensure that all stakeholders agree on the API's behavior before any code is written.
+
+<Note>
+  MuleSoft supports both RAML and OAS (OpenAPI Specification) formats. This tutorial uses RAML 1.0, which is the native specification language in Anypoint Platform.
+</Note>
+
+---
+
+## Step 2.1: Explore Existing Specs on Exchange
+
+Before creating a specification from scratch, check Anypoint Exchange for existing assets you can reuse or reference.
+
+<Steps>
+  <Step title="Open Anypoint Exchange">
+    Log in to Anypoint Platform and navigate to **Exchange** from the main navigation menu.
+  </Step>
+  <Step title="Filter by REST APIs">
+    Use the asset type filter on the left sidebar and select **REST APIs**. Browse the results to see published specifications from your organization and MuleSoft's public catalog.
+  </Step>
+  <Step title="Review relevant specs">
+    Click into any specification to view its summary, endpoints, request/response examples, and documentation. Note patterns and conventions you want to adopt in your own design.
+  </Step>
+</Steps>
+
+---
+
+## Step 2.2: Create a Spec in API Designer
+
+<Steps>
+  <Step title="Open Design Center">
+    From Anypoint Platform, navigate to **Design Center** and click **Create New** then select **New API Specification**.
+  </Step>
+  <Step title="Name your specification">
+    Enter the name **hello-world-api** and select **RAML 1.0** as the specification language. Click **Create Specification**.
+  </Step>
+  <Step title="Write the RAML">
+    Replace the default content in the editor with the following RAML specification:
+  </Step>
+</Steps>
+
+```raml
+#%RAML 1.0
+title: hello world
+version: v1
+description: A greeting for the world
+
+types:
+  greeting:
+    properties:
+      todays-greeting: string
+
+/greeting:
+  get:
+    responses:
+      200:
+        body:
+          application/json:
+            type: greeting
+            example:
+              {todays-greeting: "test-greeting"}
+      404:
+        body:
+          application/json:
+            properties:
+              message: string
+            example: |
+              {
+                "message" : "Greeting not found"
+              }
+```
+
+This specification defines:
+
+| Element | Description |
+|---|---|
+| `title` / `version` | Metadata identifying the API and its version. |
+| `types.greeting` | A custom data type with a single `todays-greeting` string property. |
+| `GET /greeting` | A resource that returns a greeting message. |
+| `200` response | Returns a JSON body matching the `greeting` type. |
+| `404` response | Returns a JSON error message when the greeting is not found. |
+
+---
+
+## Step 2.3: Test the Spec with the Mocking Service
+
+<Steps>
+  <Step title="Open the Documentation panel">
+    In API Designer, click the **Documentation** tab on the right side of the editor to see the rendered specification.
+  </Step>
+  <Step title="Select the GET /greeting endpoint">
+    Expand the **/greeting** resource and click the **GET** method to view its details, including the expected responses and examples.
+  </Step>
+  <Step title="Click Try It">
+    Click the **Try It** button in the upper-right corner of the endpoint documentation panel.
+  </Step>
+  <Step title="Send to the Mocking Service">
+    Click **Send** to issue a request against the built-in mocking service. The mocking service returns example data from your specification without any backend implementation.
+  </Step>
+  <Step title="Verify the response">
+    Confirm that you receive a **200 OK** status code with the following response body:
+
+    ```json
+    {
+      "todays-greeting": "test-greeting"
+    }
+    ```
+  </Step>
+</Steps>
+
+<Tip>
+  The mocking service is a powerful way to share a working preview of your API with stakeholders before writing any implementation code. Share the mocking service URL with frontend developers so they can start building against your API immediately.
+</Tip>
+
+---
+
+## Step 2.4: Publish to Exchange
+
+Publishing your specification to Exchange makes it discoverable and reusable by other members of your organization.
+
+<Steps>
+  <Step title="Click Publish">
+    In API Designer, click the **Publish** button (or navigate to **Publish to Exchange** in the menu).
+  </Step>
+  <Step title="Confirm asset details">
+    Verify the asset name, version, and business group. Add a description if desired.
+  </Step>
+  <Step title="Complete the publish">
+    Click **Publish to Exchange**. Your specification is now available for other team members to discover, import, and build upon.
+  </Step>
+</Steps>
+
+---
+
+## Developer Deep Dives
+
+<AccordionGroup>
+  <Accordion title="Exchange Publishing Options">
+    Exchange supports multiple asset types beyond REST API specifications, including connectors, templates, examples, and custom assets. When publishing, you can choose the lifecycle state (such as Development, Stable, or Deprecated) and set visibility to your organization or specific business groups.
+  </Accordion>
+  <Accordion title="Authentication and Security Schemes">
+    RAML supports security scheme definitions including OAuth 2.0, Basic Authentication, and custom schemes. Define a `securitySchemes` block at the root of your RAML file and apply it to individual resources or the entire API. This is critical for production APIs that require caller authentication.
+  </Accordion>
+  <Accordion title="RAML Annotations">
+    Annotations let you attach custom metadata to your RAML specification. Define an annotation type and then apply it to any RAML node. Common use cases include marking endpoints as deprecated, adding SLA tier information, or embedding operational metadata that downstream tooling can consume.
+  </Accordion>
+  <Accordion title="API Fragments for Reuse">
+    API fragments are reusable pieces of a RAML specification, such as data types, traits, resource types, and security schemes. Publish fragments to Exchange independently so that multiple API specifications can reference the same definitions, reducing duplication and ensuring consistency across your organization.
+  </Accordion>
+</AccordionGroup>
+
+<Warning>
+  Once published to Exchange, your specification version is immutable. To make changes, increment the version number and publish again. This ensures consumers always have a stable contract to build against.
+</Warning>

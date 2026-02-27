@@ -80,6 +80,22 @@
         ]
       },
       {
+        "tab": "Tutorials",
+        "groups": [
+          {
+            "group": "Build an API",
+            "pages": [
+              "tutorials/api-led-overview",
+              "tutorials/design-api",
+              "tutorials/develop-api",
+              "tutorials/validate-and-test",
+              "tutorials/deploy-api",
+              "tutorials/operate-api"
+            ]
+          }
+        ]
+      },
+      {
         "tab": "API Reference",
         "groups": [
           {

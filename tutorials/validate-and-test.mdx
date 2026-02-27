@@ -1,0 +1,124 @@
+---
+title: "Add Validation and Error Handling"
+description: "Add input validation, error handling, and test your API"
+---
+
+## Overview
+
+A robust API validates incoming data and returns meaningful error messages when something goes wrong. In this step, you will add input validation to your greeting endpoint, configure a custom error handler, and use the Studio debugger to verify the behavior end to end.
+
+---
+
+## Step 4.1: Add Input Validation
+
+<Steps>
+  <Step title="Install the Validation Module">
+    In Anypoint Studio, open the **Mule Palette** and search for **Validation**. If the module is not already present, click **Search in Exchange** and install the **Validation Module** from the results.
+  </Step>
+  <Step title="Add Validate Size to the flow">
+    Drag the **Validate Size** operation from the Validation module into your **GET /greeting** flow, placing it before the Set Payload component.
+  </Step>
+  <Step title="Configure the validation">
+    Select the Validate Size component and set the following properties:
+  </Step>
+</Steps>
+
+| Property | Value | Notes |
+|---|---|---|
+| **Value** | `payload` | Switch to **expression mode** using the **fx** button. |
+| **Min** | `6` | Minimum allowed length in characters. |
+| **Max** | `30` | Maximum allowed length in characters. |
+| **Error Message** | `The specified message is either too long or too short.` | Custom message returned when validation fails. |
+
+<Tip>
+  The **fx** button toggles between literal mode and expression mode. In expression mode, values are evaluated as DataWeave expressions at runtime. When you enter `payload`, the Validation module evaluates the current message payload rather than treating it as the literal string "payload".
+</Tip>
+
+### Test the Validation
+
+<Steps>
+  <Step title="Run the application">
+    Start the Mule application locally if it is not already running.
+  </Step>
+  <Step title="Send a valid request">
+    Use your REST client to send a **GET** request to `http://localhost:8081/api/greeting`. Observe the response.
+  </Step>
+  <Step title="Debug with breakpoints">
+    To inspect the flow execution in detail, add a **breakpoint** on the Validate Size component by right-clicking it and selecting **Toggle Breakpoint**. Run the application in **Debug mode** (right-click the project, select **Debug As > Mule Application**). When a request arrives, the debugger pauses at the breakpoint so you can inspect the payload, variables, and attributes at that point in the flow.
+  </Step>
+</Steps>
+
+---
+
+## Step 4.2: Error Handling
+
+When validation fails, the Validation module throws a `VALIDATION:INVALID_SIZE` error. By default, Mule returns a generic 500 error. You will now add a custom error handler that returns a descriptive message.
+
+<Steps>
+  <Step title="Add an On Error Propagate scope">
+    In the **Error handling** section of your GET /greeting flow, drag an **On Error Propagate** component from the Mule Palette.
+  </Step>
+  <Step title="Configure the error type">
+    Select the On Error Propagate scope and set the **Type** field to:
+
+    ```
+    VALIDATION:INVALID_SIZE
+    ```
+
+    This ensures the handler only catches validation size errors, letting other error types fall through to the default handlers.
+  </Step>
+  <Step title="Add a Set Payload for the error response">
+    Drag a **Set Payload** component inside the On Error Propagate scope. Configure the value in expression mode (**fx**):
+
+    ```dataweave
+    error.description
+    ```
+
+    This returns the custom error message you configured on the Validate Size component.
+  </Step>
+</Steps>
+
+### Debug the Error Flow
+
+<Steps>
+  <Step title="Set breakpoints on the error handler">
+    Add breakpoints on both the On Error Propagate scope and its Set Payload component.
+  </Step>
+  <Step title="Trigger a validation failure">
+    Send a request that causes the payload to fall outside the 6-30 character range. The debugger pauses at each breakpoint so you can step through the error handling flow.
+  </Step>
+  <Step title="Verify the error response">
+    After stepping through the flow, confirm that the API returns a **500** status code with the body:
+
+    ```
+    The specified message is either too long or too short.
+    ```
+  </Step>
+</Steps>
+
+<Note>
+  The **On Error Propagate** scope propagates the error to the caller, which means the HTTP status code reflects the error (500 in this case). If you want to return a different status code (such as 400 Bad Request), add an additional **Set Variable** or configure the HTTP listener response settings to map error types to specific status codes.
+</Note>
+
+---
+
+## Step 4.3: Publish the Updated Version to Exchange
+
+<Steps>
+  <Step title="Increment the version">
+    Update the version number in your project's `pom.xml` to reflect the changes (for example, from `1.0.0` to `1.1.0`).
+  </Step>
+  <Step title="Publish">
+    Right-click the project and select **Anypoint Platform > Publish to Exchange**. Confirm the updated version and publish.
+  </Step>
+</Steps>
+
+---
+
+## Automated Testing with MUnit
+
+<Note>
+  MuleSoft provides the **MUnit** testing framework for writing automated unit and integration tests for Mule applications. MUnit tests run inside Studio and as part of your CI/CD pipeline using Maven. You can assert on payloads, status codes, flow variables, and error conditions.
+
+  While this tutorial uses manual testing with a REST client and the Studio debugger, production APIs should include MUnit test suites that cover both happy-path and error scenarios. See the [MUnit documentation](/reference/munit) for details on writing and running automated tests.
+</Note>

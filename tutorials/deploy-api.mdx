@@ -1,0 +1,155 @@
+---
+title: "Deploy to CloudHub"
+description: "Deploy your API, create a proxy, and apply rate limiting"
+---
+
+## Overview
+
+With your API developed and tested locally, you are ready to deploy it to CloudHub, create an API proxy for governance, and apply a rate-limiting policy to protect your backend from excessive traffic.
+
+<Warning>
+  Application names on CloudHub must be **globally unique** across all Anypoint Platform organizations. If your chosen name is taken, append a unique identifier (such as your initials or a short random string) to the app name.
+</Warning>
+
+---
+
+## Step 5.1: Deploy to CloudHub
+
+<Steps>
+  <Step title="Open the deployment wizard">
+    In Anypoint Studio, right-click your project in the Package Explorer and select **Anypoint Platform > Deploy to CloudHub**.
+  </Step>
+  <Step title="Configure deployment settings">
+    Set the following options:
+
+    - **Environment**: Sandbox
+    - **Application Name**: A globally unique name (for example, `hello-world-greeting-yourname`)
+    - Accept the default worker size and count for this tutorial.
+  </Step>
+  <Step title="Deploy">
+    Click **Deploy Application**. Studio uploads the application archive and CloudHub provisions a worker to run it. Wait for the status to show **Started** in Runtime Manager.
+  </Step>
+  <Step title="Test the deployed application">
+    Send a **GET** request to your CloudHub URL:
+
+    ```
+    http://hello-world-greeting.[yourname].us-e2.cloudhub.io/api/greeting
+    ```
+
+    Verify that you receive a **200 OK** response with the greeting message.
+  </Step>
+</Steps>
+
+<Tip>
+  You can find the exact URL of your deployed application in **Runtime Manager > Applications**. Click your application name to see the **App URL** in the settings panel.
+</Tip>
+
+---
+
+## Step 5.2: Create an API Proxy
+
+An API proxy sits in front of your deployed application and provides a governance layer. It enables you to apply policies, collect analytics, and manage access without modifying your application code.
+
+<Steps>
+  <Step title="Open API Manager">
+    In Anypoint Platform, navigate to **API Manager** and click **Add API**.
+  </Step>
+  <Step title="Select the gateway type">
+    Choose **Mule Gateway** as the gateway type and select **Deploy a proxy application** as the proxy type.
+  </Step>
+  <Step title="Link to your Exchange asset">
+    Search for and select the **hello-world-api** specification from Exchange. This links the proxy to your published API contract.
+  </Step>
+  <Step title="Configure the proxy target">
+    Set the deployment target to **CloudHub** and the environment to **Sandbox**. Enter a unique name for the proxy application.
+  </Step>
+  <Step title="Set the upstream URL">
+    Enter the URL of your deployed Mule application (from Step 5.1) as the **Upstream URL**. This tells the proxy where to forward incoming requests.
+
+    ```
+    http://hello-world-greeting.[yourname].us-e2.cloudhub.io/api
+    ```
+  </Step>
+  <Step title="Deploy the proxy">
+    Click **Deploy**. API Manager deploys a proxy application to CloudHub that routes traffic to your backend application.
+  </Step>
+</Steps>
+
+---
+
+## Step 5.3: Configure the Proxy
+
+<Steps>
+  <Step title="Copy the proxy URL">
+    In API Manager, open your API instance and copy the **Proxy URL** from the status page. This is the public-facing URL that consumers will use.
+  </Step>
+  <Step title="Set the consumer endpoint">
+    Navigate to the API instance settings and set the **Consumer Endpoint** to the proxy URL. This ensures that Exchange and the API portal display the correct URL for consumers.
+  </Step>
+  <Step title="Test through the proxy">
+    Go to Exchange, find your **hello-world-api** asset, and open the API console. Select the **Sandbox** server environment and send a test request to verify that requests flow through the proxy to your backend.
+  </Step>
+  <Step title="Make the API public">
+    To allow external consumers to discover your API, click **Share** on the Exchange asset page and configure the visibility settings. You can make the API available to your entire organization or to external partners via a public portal.
+  </Step>
+</Steps>
+
+---
+
+## Step 5.4: Apply a Rate-Limiting Policy
+
+Rate limiting protects your API from being overwhelmed by too many requests in a short period.
+
+<Steps>
+  <Step title="Open the Policies tab">
+    In API Manager, select your API instance and navigate to the **Policies** tab.
+  </Step>
+  <Step title="Add a rate-limiting policy">
+    Click **Add Policy** and select **Rate Limiting - SLA-Based** under the **Quality of Service** category. If SLA-based is not needed, select the standard **Rate Limiting** policy.
+  </Step>
+  <Step title="Configure the limits">
+    Set the following parameters:
+
+    | Parameter | Value |
+    |---|---|
+    | **Number of Requests** | `3` |
+    | **Time Period** | `1` |
+    | **Time Unit** | `Minute` |
+    | **Expose Headers** | Enabled |
+
+    Enabling **Expose Headers** adds `X-RateLimit-Limit`, `X-RateLimit-Remaining`, and `X-RateLimit-Reset` headers to every response so consumers can track their usage.
+  </Step>
+  <Step title="Apply the policy">
+    Click **Apply**. The policy takes effect immediately on the proxy.
+  </Step>
+  <Step title="Test the rate limit">
+    Send **GET** requests to the proxy URL in quick succession. After the third request within one minute, the API returns:
+
+    ```
+    HTTP/1.1 429 Too Many Requests
+    ```
+
+    Check the response headers to see the rate-limit counters:
+
+    ```
+    X-RateLimit-Limit: 3
+    X-RateLimit-Remaining: 0
+    X-RateLimit-Reset: 45000
+    ```
+  </Step>
+</Steps>
+
+<Note>
+  Rate-limiting policies are enforced at the proxy layer. Your backend application never receives requests that exceed the limit, which protects backend resources. You can adjust the limits at any time in API Manager without redeploying your application.
+</Note>
+
+---
+
+## Deployment Summary
+
+| Component | Location | Purpose |
+|---|---|---|
+| **Mule Application** | CloudHub (Sandbox) | Runs the API business logic. |
+| **API Proxy** | CloudHub (Sandbox) | Provides governance, analytics, and policy enforcement. |
+| **Rate Limiting Policy** | API Manager | Restricts consumers to 3 requests per minute. |
+| **Exchange Asset** | Anypoint Exchange | Discovery, documentation, and consumer portal. |
