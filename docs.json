@@ -4,8 +4,8 @@
   "name": "MuleSoft Documentation",
   "colors": {
     "primary": "#00A1DF",
-    "light": "#00C7FF",
-    "dark": "#0077B5"
+    "light": "#6AC1EE",
+    "dark": "#00044D"
   },
   "logo": {
     "light": "/logo/light.svg",
@@ -75,6 +75,29 @@
             "pages": [
               "mq/faq",
               "mq/glossary"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Testing",
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": ["api-testing/index"]
+          },
+          {
+            "group": "Testing Frameworks",
+            "pages": [
+              "api-testing/munit",
+              "api-testing/functional-monitoring"
+            ]
+          },
+          {
+            "group": "Reference & Guides",
+            "pages": [
+              "api-testing/bdd-reference",
+              "api-testing/create-monitor"
             ]
           }
         ]
